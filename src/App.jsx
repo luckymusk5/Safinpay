@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import Navbar_new from "./components/Navbar_new";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import HomeSimple from "./pages/HomeSimple";
@@ -105,6 +106,7 @@ export default function App() {
           </SearchProvider>
         </WishlistProvider>
       </CartProvider>
+      <Analytics />
     </AuthProvider>
   );
 }
