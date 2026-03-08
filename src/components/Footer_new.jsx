@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const NAVY = "#1b3a6b";
 
@@ -33,15 +34,34 @@ function FooterLink({ to, children }) {
   );
 }
 
+function useWindowWidth() {
+  const [w, setW] = useState(window.innerWidth);
+  useEffect(() => {
+    const h = () => setW(window.innerWidth);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return w;
+}
+
 export default function Footer_new() {
   const currentYear = new Date().getFullYear();
+  const w = useWindowWidth();
+  const isMobile = w < 640;
+  const isTablet = w < 900;
+
+  const gridCols = isMobile
+    ? "1fr"
+    : isTablet
+    ? "1fr 1fr"
+    : "2fr repeat(4, 1fr)";
 
   return (
     <footer style={{ background: "#f9f9f9", borderTop: "1px solid #e8e8e8", marginTop: "3rem", fontFamily: "inherit" }}>
 
       {/* ── Main columns ── */}
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "2.5rem 2rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr repeat(4, 1fr)", gap: "2rem" }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: isMobile ? "2rem 1.25rem" : "2.5rem 2rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: isMobile ? "1.5rem" : "2rem" }}>
 
           {/* Brand column */}
           <div>
@@ -51,7 +71,6 @@ export default function Footer_new() {
             <p style={{ fontSize: "0.83rem", color: "#777", lineHeight: "1.6", marginBottom: "1.2rem", maxWidth: "240px" }}>
               La marketplace africaine qui connecte acheteurs et vendeurs à travers tout le continent.
             </p>
-
           </div>
 
           {/* À propos */}
@@ -101,12 +120,15 @@ export default function Footer_new() {
       </div>
 
       {/* ── Bottom bar ── */}
-      <div style={{ borderTop: "1px solid #e8e8e8", padding: "1.1rem 2rem" }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+      <div style={{ borderTop: "1px solid #e8e8e8", padding: isMobile ? "1rem 1.25rem" : "1.1rem 2rem" }}>
+        <div style={{ maxWidth: "1400px", margin: "0 auto", display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center",
+          flexWrap: "wrap", gap: "0.5rem" }}>
           <p style={{ color: "#888", fontSize: "0.82rem", margin: 0 }}>
             © {currentYear} <strong><span style={{ color: "#000000" }}>Safin</span><span style={{ color: NAVY }}>pay</span></strong>. Tous droits réservés. En expansion à travers l'Afrique.
           </p>
-          <div style={{ display: "flex", gap: "1.5rem" }}>
+          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
             {["Confidentialité", "Conditions d'utilisation", "Cookies"].map(label => (
               <span
                 key={label}

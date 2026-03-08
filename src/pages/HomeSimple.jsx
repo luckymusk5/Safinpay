@@ -2,6 +2,16 @@ import { useEffect, useState, useContext, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { SearchContext } from "../context/SearchContext";
 
+function useWindowWidth() {
+  const [w, setW] = useState(window.innerWidth);
+  useEffect(() => {
+    const h = () => setW(window.innerWidth);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return w;
+}
+
 const NAVY  = "#1b3a6b";
 const GOLD  = "#c9a030";
 const WHITE = "#ffffff";
@@ -84,16 +94,18 @@ function RadioItem({ name, value, label, checked, onChange }) {
   );
 }
 
-function ProductCard({ product }) {
+function ProductCard({ product, idx = 0 }) {
   const title    = product.displayTitle;
   const imageUrl = product.images && product.images[0] ? product.images[0] : null;
   return (
-    <div style={{
+    <div className="product-card" style={{
       background: WHITE, borderRadius: "10px", overflow: "hidden",
       boxShadow: "0 2px 10px rgba(27,58,107,0.07)",
       border: "1px solid rgba(27,58,107,0.08)",
-      transition: "transform 0.2s, box-shadow 0.2s",
-      display: "flex", flexDirection: "column"
+      transition: "transform 0.22s, box-shadow 0.22s, border-color 0.22s",
+      display: "flex", flexDirection: "column",
+      animation: `fadeInUp 0.4s ease both`,
+      animationDelay: `${Math.min(idx * 0.05, 0.6)}s`
     }}
       onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(27,58,107,0.15)"; e.currentTarget.style.borderColor = GOLD; }}
       onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(27,58,107,0.07)"; e.currentTarget.style.borderColor = "rgba(27,58,107,0.08)"; }}
@@ -170,6 +182,9 @@ export default function HomeSimple() {
   const [displayed,  setDisplayed]  = useState([]); // max MAX_DISPLAY items
   const [totalFound, setTotalFound] = useState(0);  // total des correspondances
   const [scanning,   setScanning]   = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const w = useWindowWidth();
+  const isMobile = w < 768;
 
   const { searchTerm } = useContext(SearchContext);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -259,6 +274,7 @@ export default function HomeSimple() {
   const clearAll = () => {
     setSelectedCategory(""); setSelectedPrice("");
     setFreeShipping(false); setPrimeShipping(false); setSelectedRating("");
+    setSidebarOpen(false);
   };
 
   const activeFilters = [
@@ -282,21 +298,85 @@ export default function HomeSimple() {
 
   return (
     <div style={{ background: "#f4f6fb", minHeight: "100vh" }}>
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "1.5rem 1.5rem", display: "grid",
-        gridTemplateColumns: "240px 1fr", gap: "1.5rem", alignItems: "start" }}>
+
+      {/* ── Mobile sidebar overlay ── */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+            zIndex: 150, backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)"
+          }}
+        />
+      )}
+
+      {/* ── Mobile filter toggle bar ── */}
+      {isMobile && (
+        <div style={{ padding: "0.6rem 1rem", background: "white", borderBottom: "1px solid #eee",
+          display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <button
+            onClick={() => setSidebarOpen(o => !o)}
+            style={{
+              display: "flex", alignItems: "center", gap: "0.5rem",
+              padding: "0.45rem 1rem",
+              background: sidebarOpen ? NAVY : WHITE,
+              color: sidebarOpen ? WHITE : NAVY,
+              border: `2px solid ${NAVY}`,
+              borderRadius: "6px", fontWeight: "700", fontSize: "0.85rem",
+              cursor: "pointer", transition: "all 0.2s"
+            }}
+          >
+            Filtres{activeFilters.length > 0 ? ` (${activeFilters.length})` : ""}
+          </button>
+          <span style={{ fontSize: "0.82rem", color: "#888" }}>
+            {scanning
+              ? "Recherche en cours…"
+              : `${Math.min(totalFound, MAX_DISPLAY)} produit${totalFound !== 1 ? "s" : ""} affiché${totalFound !== 1 ? "s" : ""}`}
+          </span>
+        </div>
+      )}
+
+      <div style={{
+        maxWidth: "1400px", margin: "0 auto",
+        padding: isMobile ? "1rem" : "1.5rem",
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "240px 1fr",
+        gap: "1.5rem", alignItems: "start"
+      }}>
 
         {/* ── SIDEBAR ── */}
-        <aside style={{ background: WHITE, borderRadius: "10px", padding: "1.5rem",
-          boxShadow: "0 2px 12px rgba(27,58,107,0.08)", position: "sticky", top: "80px" }}>
+        <aside style={{
+          background: WHITE, borderRadius: isMobile ? "0 12px 12px 0" : "10px",
+          padding: "1.5rem",
+          boxShadow: "0 2px 12px rgba(27,58,107,0.08)",
+          position: isMobile ? "fixed" : "sticky",
+          top: isMobile ? "0" : "80px",
+          left: isMobile ? "0" : "auto",
+          bottom: isMobile ? "0" : "auto",
+          width: isMobile ? "min(280px, 85vw)" : "auto",
+          height: isMobile ? "100vh" : "auto",
+          overflowY: isMobile ? "auto" : "visible",
+          zIndex: isMobile ? 160 : 1,
+          transform: isMobile ? (sidebarOpen ? "translateX(0)" : "translateX(-110%)") : "none",
+          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
             <span style={{ fontWeight: "700", fontSize: "0.95rem", color: NAVY }}>Filtres</span>
-            {activeFilters.length > 0 && (
-              <button onClick={clearAll} style={{ background: "none", border: "none", color: GOLD,
-                fontSize: "0.78rem", fontWeight: "600", cursor: "pointer", padding: 0 }}>
-                Réinitialiser
-              </button>
-            )}
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              {activeFilters.length > 0 && (
+                <button onClick={clearAll} style={{ background: "none", border: "none", color: GOLD,
+                  fontSize: "0.78rem", fontWeight: "600", cursor: "pointer", padding: 0 }}>
+                  Réinitialiser
+                </button>
+              )}
+              {isMobile && (
+                <button onClick={() => setSidebarOpen(false)} style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  fontSize: "1.2rem", color: "#888", padding: "0 2px", lineHeight: 1
+                }}>✕</button>
+              )}
+            </div>
           </div>
 
           {activeFilters.length > 0 && (
@@ -368,24 +448,26 @@ export default function HomeSimple() {
 
         {/* ── PRODUCT GRID ── */}
         <main>
-          {/* Barre de statut du scan */}
-          <div style={{ marginBottom: "1rem", fontSize: "0.83rem", color: "#666", minHeight: "1.4rem" }}>
-            {scanning ? (
-              <span style={{ color: NAVY }}>
-                Recherche en cours{totalFound > 0
-                  ? " — " + Math.min(totalFound, MAX_DISPLAY) + " affiché" + (totalFound > 1 ? "s" : "")
-                  : ""}…
-              </span>
-            ) : (
-              <span>
-                <strong style={{ color: NAVY }}>{Math.min(totalFound, MAX_DISPLAY)}</strong>
-                {" produit" + (totalFound !== 1 ? "s" : "") + " affiché" + (totalFound !== 1 ? "s" : "")}
-                {totalFound > MAX_DISPLAY && (
-                  <span style={{ color: "#999" }}>{" (sur " + totalFound + " trouvés)"}</span>
-                )}
-              </span>
-            )}
-          </div>
+          {/* Barre de statut du scan — desktop uniquement */}
+          {!isMobile && (
+            <div style={{ marginBottom: "1rem", fontSize: "0.83rem", color: "#666", minHeight: "1.4rem" }}>
+              {scanning ? (
+                <span style={{ color: NAVY }}>
+                  Recherche en cours{totalFound > 0
+                    ? " — " + Math.min(totalFound, MAX_DISPLAY) + " affiché" + (totalFound > 1 ? "s" : "")
+                    : ""}…
+                </span>
+              ) : (
+                <span>
+                  <strong style={{ color: NAVY }}>{Math.min(totalFound, MAX_DISPLAY)}</strong>
+                  {" produit" + (totalFound !== 1 ? "s" : "") + " affiché" + (totalFound !== 1 ? "s" : "")}
+                  {totalFound > MAX_DISPLAY && (
+                    <span style={{ color: "#999" }}>{" (sur " + totalFound + " trouvés)"}</span>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
 
           {!scanning && displayed.length === 0 ? (
             <div style={{ background: WHITE, borderRadius: "10px", padding: "3rem", textAlign: "center",
@@ -402,9 +484,10 @@ export default function HomeSimple() {
             </div>
           ) : (
             <div style={{ display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "1.2rem" }}>
-              {displayed.map(product => (
-                <ProductCard key={product.id} product={product} />
+              gridTemplateColumns: isMobile ? "repeat(auto-fill, minmax(155px, 1fr))" : "repeat(auto-fill, minmax(210px, 1fr))",
+              gap: isMobile ? "0.75rem" : "1.2rem" }}>
+              {displayed.map((product, idx) => (
+                <ProductCard key={product.id} product={product} idx={idx} />
               ))}
             </div>
           )}
