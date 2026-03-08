@@ -21,6 +21,27 @@ export default function HomeSimple() {
   // Afficher uniquement les 15 premiers produits sur le home
   const PRODUCTS_PER_PAGE = 15;
 
+  // Détecte la catégorie d'un produit à partir de mots-clés dans son titre
+  const detectCategory = (title = "", description = "") => {
+    const text = (title + " " + description).toLowerCase();
+    if (/smartphone|téléphone|phone|samsung|xiaomi|zte|iphone|huawei|oppo|tecno|infinix|android|4g|5g|modem|wifi|laptop|ordinateur|pc|tablette|écouteur|earphone|batterie externe|powerbank|clavier|souris|tv|télévision|home cin|cinéma|console|playstation|xbox|ram|ssd|hdd|processeur|cpu|gpu|router|switch réseau|neffos|redmi|axon|blade|nubia/.test(text)) {
+      return "Électronique";
+    }
+    if (/vêtement|robe|chemise|pantalon|jupe|pull|manteau|pagne|tissu|tenue|habit|chaussure|basket|sac à main/.test(text)) {
+      return "Vêtements";
+    }
+    if (/livre|roman|manuel|dictionnaire|scolaire|bande dessinée/.test(text)) {
+      return "Livres";
+    }
+    if (/riz|pâte|spaghetti|maïs|farine|sucre|sel|huile|lait|yaourt|céréale|cerelac|nido|biscuit|café|thé|jus|boisson|whisky|bière|imperial blue|eau|yaourt|nourriture|alimentation|savon|déo|shampoing|nettoyage/.test(text)) {
+      return "Maison";
+    }
+    if (/guitare|piano|clavier.*musique|sport|football|basketball|vélo|fitness|yoga|randonnée/.test(text)) {
+      return "Sports";
+    }
+    return "Maison"; // catégorie par défaut
+  };
+
   useEffect(() => {
     // Charger le fichier JSON
     fetch("/products.json")
@@ -36,10 +57,10 @@ export default function HomeSimple() {
         productsList = productsList.slice(0, 15).map((product, index) => ({
           ...product,
           id: product.id || `json_${index}`,
-          category: "Électronique", // Par défaut
-          rating: 5, // Rating par défaut
-          freeShippingAvailable: Math.random() > 0.5, // Aléatoire pour démo
-          primeAvailable: Math.random() > 0.3, // Aléatoire pour démo
+          category: detectCategory(product.title, product.description),
+          rating: 5,
+          freeShippingAvailable: Math.random() > 0.5,
+          primeAvailable: Math.random() > 0.3,
         }));
         setAllProducts(productsList);
         console.log(`Chargé ${productsList.length} produits`);
