@@ -13,7 +13,7 @@ html {
 
 body {
   font-family: 'Amazon Ember', 'Segoe UI', 'Helvetica Neue', sans-serif;
-  background-color: #f5f5f5;
+  background-color: #ffffff;
   color: #0f1111;
   line-height: 1.6;
 }
@@ -580,6 +580,19 @@ button:disabled {
   animation: spin 0.8s linear infinite;
   margin: 2rem auto;
 }
+
+.spinner-green {
+  border: 3px solid #e8f5ee;
+  border-top-color: #00a651;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+/* Hide scrollbar on horizontal scroll row */
+.scroll-hide::-webkit-scrollbar { display: none; }
 
 @keyframes spin {
   to {
