@@ -16,6 +16,7 @@ export default function HomeSimple() {
   const [freeShipping, setFreeShipping] = useState(false);
   const [primeShipping, setPrimeShipping] = useState(false);
   const [selectedRating, setSelectedRating] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
 
   // Afficher uniquement les 15 premiers produits sur le home
   const PRODUCTS_PER_PAGE = 15;
@@ -112,118 +113,163 @@ export default function HomeSimple() {
       </div>
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1.5rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "250px 1fr", gap: "2rem" }}>
-          
-          {/* Filtres - Panneau latéral */}
-          <div>
-            {/* Catégories */}
-            <div style={{
-              backgroundColor: "white",
-              padding: "1rem",
-              borderRadius: "4px",
-              marginBottom: "1.5rem",
+
+        {/* Barre de filtres */}
+        <div style={{ position: "relative", marginBottom: "1.5rem" }}>
+          <button
+            onClick={() => setFilterOpen(!filterOpen)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px",
+              backgroundColor: filterOpen ? "#1f5296" : "white",
+              color: filterOpen ? "white" : "#1f5296",
+              border: "2px solid #1f5296",
+              borderRadius: "6px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+            }}
+          >
+            <span style={{ fontSize: "18px", lineHeight: 1 }}>☰</span>
+            Filtres
+            {(selectedCategory || selectedPrice || freeShipping || primeShipping || selectedRating) && (
+              <span style={{
+                backgroundColor: "#d5001c",
+                color: "white",
+                borderRadius: "50%",
+                width: "18px",
+                height: "18px",
+                fontSize: "11px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>●</span>
+            )}
+          </button>
+
+          {/* Dropdown panel */}
+          {filterOpen && (
+            <div style={{
+              position: "absolute",
+              top: "calc(100% + 8px)",
+              left: 0,
+              zIndex: 100,
+              backgroundColor: "white",
+              border: "1px solid #ddd",
+              borderRadius: "8px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              padding: "1.5rem",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+              gap: "1.5rem",
+              minWidth: "680px"
             }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "1rem" }}>Catégories</h3>
-              {["Électronique", "Vêtements", "Livres", "Maison", "Sports"].map(cat => (
-                <label key={cat} style={{ display: "block", marginBottom: "0.5rem", cursor: "pointer" }}>
-                  <input
-                    type="radio"
-                    name="category"
-                    value={cat}
-                    checked={selectedCategory === cat}
-                    onChange={(e) => setSelectedCategory(e.target.checked ? cat : "")}
-                    style={{ marginRight: "0.5rem" }}
-                  />
-                  {cat}
+
+              {/* Catégories */}
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "0.75rem", color: "#1f5296", borderBottom: "2px solid #1f5296", paddingBottom: "4px" }}>Catégories</h3>
+                {["Électronique", "Vêtements", "Livres", "Maison", "Sports"].map(cat => (
+                  <label key={cat} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "0.4rem", cursor: "pointer", fontSize: "13px" }}>
+                    <input
+                      type="radio"
+                      name="category"
+                      value={cat}
+                      checked={selectedCategory === cat}
+                      onChange={(e) => setSelectedCategory(e.target.checked ? cat : "")}
+                    />
+                    {cat}
+                  </label>
+                ))}
+                {selectedCategory && (
+                  <button onClick={() => setSelectedCategory("")} style={{ fontSize: "11px", color: "#d5001c", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: "4px" }}>✕ Effacer</button>
+                )}
+              </div>
+
+              {/* Prix */}
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "0.75rem", color: "#1f5296", borderBottom: "2px solid #1f5296", paddingBottom: "4px" }}>Prix</h3>
+                {[
+                  { label: "0 - 50 000 FCFA", value: "0-50000" },
+                  { label: "50 000 - 100 000 FCFA", value: "50000-100000" },
+                  { label: "100 000 - 500 000 FCFA", value: "100000-500000" },
+                  { label: "Plus de 500 000 FCFA", value: "500000+" }
+                ].map(range => (
+                  <label key={range.value} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "0.4rem", cursor: "pointer", fontSize: "13px" }}>
+                    <input
+                      type="radio"
+                      name="price"
+                      value={range.value}
+                      checked={selectedPrice === range.value}
+                      onChange={(e) => setSelectedPrice(e.target.checked ? range.value : "")}
+                    />
+                    {range.label}
+                  </label>
+                ))}
+                {selectedPrice && (
+                  <button onClick={() => setSelectedPrice("")} style={{ fontSize: "11px", color: "#d5001c", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: "4px" }}>✕ Effacer</button>
+                )}
+              </div>
+
+              {/* Livraison */}
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "0.75rem", color: "#1f5296", borderBottom: "2px solid #1f5296", paddingBottom: "4px" }}>Livraison</h3>
+                <label style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "0.4rem", cursor: "pointer", fontSize: "13px" }}>
+                  <input type="checkbox" checked={freeShipping} onChange={(e) => setFreeShipping(e.target.checked)} />
+                  Livraison gratuite
                 </label>
-              ))}
-            </div>
-
-            {/* Prix */}
-            <div style={{
-              backgroundColor: "white",
-              padding: "1rem",
-              borderRadius: "4px",
-              marginBottom: "1.5rem",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-            }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "1rem" }}>Prix</h3>
-              {[
-                { label: "0 - 50,000 FCFA", value: "0-50000" },
-                { label: "50,000 - 100,000 FCFA", value: "50000-100000" },
-                { label: "100,000 - 500,000 FCFA", value: "100000-500000" },
-                { label: "Plus de 500,000 FCFA", value: "500000+" }
-              ].map(range => (
-                <label key={range.value} style={{ display: "block", marginBottom: "0.5rem", cursor: "pointer" }}>
-                  <input
-                    type="radio"
-                    name="price"
-                    value={range.value}
-                    checked={selectedPrice === range.value}
-                    onChange={(e) => setSelectedPrice(e.target.checked ? range.value : "")}
-                    style={{ marginRight: "0.5rem" }}
-                  />
-                  {range.label}
+                <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "13px" }}>
+                  <input type="checkbox" checked={primeShipping} onChange={(e) => setPrimeShipping(e.target.checked)} />
+                  Livraison rapide (Prime)
                 </label>
-              ))}
-            </div>
+              </div>
 
-            {/* Livraison */}
-            <div style={{
-              backgroundColor: "white",
-              padding: "1rem",
-              borderRadius: "4px",
-              marginBottom: "1.5rem",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-            }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "1rem" }}>Livraison</h3>
-              <label style={{ display: "block", marginBottom: "0.5rem", cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={freeShipping}
-                  onChange={(e) => setFreeShipping(e.target.checked)}
-                  style={{ marginRight: "0.5rem" }}
-                />
-                Livraison gratuite
-              </label>
-              <label style={{ display: "block", cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={primeShipping}
-                  onChange={(e) => setPrimeShipping(e.target.checked)}
-                  style={{ marginRight: "0.5rem" }}
-                />
-                Livraison rapide (Prime)
-              </label>
-            </div>
+              {/* Évaluations */}
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "0.75rem", color: "#1f5296", borderBottom: "2px solid #1f5296", paddingBottom: "4px" }}>Évaluations</h3>
+                {[5, 4].map(stars => (
+                  <label key={stars} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "0.4rem", cursor: "pointer", fontSize: "13px" }}>
+                    <input
+                      type="radio"
+                      name="rating"
+                      value={stars}
+                      checked={selectedRating === String(stars)}
+                      onChange={(e) => setSelectedRating(e.target.checked ? String(stars) : "")}
+                    />
+                    {"★".repeat(stars)} ({stars}+)
+                  </label>
+                ))}
+                {selectedRating && (
+                  <button onClick={() => setSelectedRating("")} style={{ fontSize: "11px", color: "#d5001c", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: "4px" }}>✕ Effacer</button>
+                )}
+              </div>
 
-            {/* Évaluations */}
-            <div style={{
-              backgroundColor: "white",
-              padding: "1rem",
-              borderRadius: "4px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-            }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "1rem" }}>Évaluations</h3>
-              {[5, 4].map(stars => (
-                <label key={stars} style={{ display: "block", marginBottom: "0.5rem", cursor: "pointer" }}>
-                  <input
-                    type="radio"
-                    name="rating"
-                    value={stars}
-                    checked={selectedRating === String(stars)}
-                    onChange={(e) => setSelectedRating(e.target.checked ? String(stars) : "")}
-                    style={{ marginRight: "0.5rem" }}
-                  />
-                  {stars}+ étoiles
-                </label>
-              ))}
+              {/* Bouton appliquer */}
+              <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", borderTop: "1px solid #eee", paddingTop: "1rem" }}>
+                <button
+                  onClick={() => setFilterOpen(false)}
+                  style={{
+                    padding: "8px 24px",
+                    backgroundColor: "#1f5296",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontSize: "14px"
+                  }}
+                >
+                  Appliquer les filtres
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Produits */}
-          <div>
+        {/* Produits */}
+        <div>
             <div style={{ marginBottom: "1.5rem", color: "#666", fontSize: "14px" }}>
               {filteredProducts.length > PRODUCTS_PER_PAGE ? (
                 <>
@@ -370,7 +416,6 @@ export default function HomeSimple() {
               </div>
             )}
           </div>
-        </div>
       </div>
     </div>
   );
