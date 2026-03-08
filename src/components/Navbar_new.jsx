@@ -21,7 +21,6 @@ export default function Navbar() {
     <nav className="navbar">
       {/* Logo */}
       <Link to="/" className="navbar-logo">
-        <span className="navbar-logo-text">Logo</span>
         <span style={{ color: "white" }}>SafinPay</span>
       </Link>
 

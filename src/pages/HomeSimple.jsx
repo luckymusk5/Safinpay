@@ -1,4 +1,5 @@
 import { useEffect, useState, useContext } from "react";
+import { Link } from "react-router-dom";
 import { SearchContext } from "../context/SearchContext";
 
 export default function HomeSimple() {
@@ -16,8 +17,8 @@ export default function HomeSimple() {
   const [primeShipping, setPrimeShipping] = useState(false);
   const [selectedRating, setSelectedRating] = useState("");
 
-  // Afficher max 35 produits par page (mais chercher dans TOUS les produits)
-  const PRODUCTS_PER_PAGE = 35;
+  // Afficher uniquement les 15 premiers produits sur le home
+  const PRODUCTS_PER_PAGE = 15;
 
   useEffect(() => {
     // Charger le fichier JSON
@@ -30,8 +31,8 @@ export default function HomeSimple() {
       })
       .then(data => {
         let productsList = Array.isArray(data) ? data : [];
-        // ✅ CHARGER TOUS les produits (pas de limite)
-        productsList = productsList.map((product, index) => ({
+        // Charger seulement les 15 premiers produits
+        productsList = productsList.slice(0, 15).map((product, index) => ({
           ...product,
           id: product.id || `json_${index}`,
           category: "Électronique", // Par défaut
@@ -348,10 +349,8 @@ export default function HomeSimple() {
                     </div>
                     
                     {/* Bouton */}
-                    <a 
-                      href={product.url || "/"} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
+                    <Link 
+                      to={`/product/${product.id}`}
                       style={{
                         display: "inline-block",
                         padding: "8px 16px",
@@ -365,7 +364,7 @@ export default function HomeSimple() {
                       }}
                     >
                       Voir plus
-                    </a>
+                    </Link>
                   </div>
                 ))}
               </div>

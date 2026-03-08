@@ -22,16 +22,38 @@ export default function ProductDetail() {
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const res = await api.get(`/products/${id}/`);
-        console.log("Données produit reçues:", res.data);
-        console.log("Image brute:", res.data.image);
-        setProduct(res.data);
-        // Charger les avis aussi
-        try {
-          const reviewRes = await api.get(`/reviews/?product_id=${id}`);
-          setReviews(reviewRes.data || []);
-        } catch (err) {
-          console.log("Pas d'avis trouvés");
+        if (id && id.startsWith("json_")) {
+          // Produit venant de products.json
+          const index = parseInt(id.replace("json_", ""), 10);
+          const res = await fetch("/products.json");
+          const data = await res.json();
+          const jsonProduct = Array.isArray(data) ? data[index] : null;
+          if (!jsonProduct) throw new Error("Produit introuvable dans le JSON");
+          // Normaliser pour correspondre au format attendu
+          setProduct({
+            id: id,
+            name: jsonProduct.title,
+            title: jsonProduct.title,
+            price: jsonProduct.price,
+            description: jsonProduct.description,
+            image: jsonProduct.images && jsonProduct.images.length > 0 ? jsonProduct.images[0] : null,
+            images: jsonProduct.images || [],
+            externalUrl: jsonProduct.url,
+            stock: 10,
+            seller_shop_name: "SafinPay",
+          });
+        } else {
+          const res = await api.get(`/products/${id}/`);
+          console.log("Données produit reçues:", res.data);
+          console.log("Image brute:", res.data.image);
+          setProduct(res.data);
+          // Charger les avis aussi
+          try {
+            const reviewRes = await api.get(`/reviews/?product_id=${id}`);
+            setReviews(reviewRes.data || []);
+          } catch (err) {
+            console.log("Pas d'avis trouvés");
+          }
         }
       } catch (err) {
         console.error("Erreur au chargement du produit:", err);
