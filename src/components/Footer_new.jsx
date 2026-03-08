@@ -39,65 +39,65 @@ export default function Footer_new() {
       }}>
         {/* About */}
         <div>
-          <h3 style={{ marginBottom: "1rem", fontWeight: "600" }}>À propos de SafinPay</h3>
-          <ul style={{ listStyle: "none", color: "#a9b3ba" }}>
+          <h3 style={{ marginBottom: "1rem", fontWeight: "700", color: "#ffffff", fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>À propos de SafinPay</h3>
+          <ul style={{ listStyle: "none", color: "#d5dfe6" }}>
             <li style={{ marginBottom: "0.5rem" }}>
-              <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Qui sommes-nous?</span>
+              <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Qui sommes-nous?</span>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Carrières</span>
+              <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Carrières</span>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Presse</span>
+              <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Presse</span>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Blog</span>
+              <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Blog</span>
             </li>
           </ul>
         </div>
 
         {/* Help */}
         <div>
-          <h3 style={{ marginBottom: "1rem", fontWeight: "600" }}>Aide</h3>
-          <ul style={{ listStyle: "none", color: "#a9b3ba" }}>
+          <h3 style={{ marginBottom: "1rem", fontWeight: "700", color: "#ffffff", fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Aide</h3>
+          <ul style={{ listStyle: "none", color: "#d5dfe6" }}>
             <li style={{ marginBottom: "0.5rem" }}>
-              <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Nous contacter</span>
+              <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Nous contacter</span>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Centre d'aide</span>
+              <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Centre d'aide</span>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Livraison & retours</span>
+              <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Livraison & retours</span>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <Link to="/account" style={{ color: "#a9b3ba", textDecoration: "none" }}>Aide sur le compte</Link>
+              <Link to="/account" style={{ color: "#d5dfe6", textDecoration: "none" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Aide sur le compte</Link>
             </li>
           </ul>
         </div>
 
         {/* For Sellers */}
         <div>
-          <h3 style={{ marginBottom: "1rem", fontWeight: "600" }}>Pour vendeurs</h3>
-          <ul style={{ listStyle: "none", color: "#a9b3ba" }}>
+          <h3 style={{ marginBottom: "1rem", fontWeight: "700", color: "#ffffff", fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Pour vendeurs</h3>
+          <ul style={{ listStyle: "none", color: "#d5dfe6" }}>
             <li style={{ marginBottom: "0.5rem" }}>
-              <Link to="/become-seller" style={{ color: "#a9b3ba", textDecoration: "none" }}>Devenir vendeur</Link>
+              <Link to="/become-seller" style={{ color: "#d5dfe6", textDecoration: "none" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Devenir vendeur</Link>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <Link to="/seller/dashboard" style={{ color: "#a9b3ba", textDecoration: "none" }}>Dashboard vendeur</Link>
+              <Link to="/seller/dashboard" style={{ color: "#d5dfe6", textDecoration: "none" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Dashboard vendeur</Link>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Académie vendeur</span>
+              <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Académie vendeur</span>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Conditions de vente</span>
+              <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Conditions de vente</span>
             </li>
           </ul>
         </div>
 
         {/* Payment Methods */}
         <div>
-          <h3 style={{ marginBottom: "1rem", fontWeight: "600" }}>Moyens de paiement</h3>
-          <ul style={{ listStyle: "none", color: "#a9b3ba" }}>
+          <h3 style={{ marginBottom: "1rem", fontWeight: "700", color: "#ffffff", fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Moyens de paiement</h3>
+          <ul style={{ listStyle: "none", color: "#d5dfe6" }}>
             <li style={{ marginBottom: "0.5rem" }}>Carte de crédit</li>
             <li style={{ marginBottom: "0.5rem" }}>Portefeuille mobile</li>
             <li style={{ marginBottom: "0.5rem" }}>Virement bancaire</li>
@@ -109,17 +109,17 @@ export default function Footer_new() {
       {/* Bottom Section - Legal */}
       <div style={{
         padding: "2rem 1.5rem",
-        borderTop: "1px solid #3f4554",
+        borderTop: "1px solid #5a6270",
         textAlign: "center",
-        color: "#a9b3ba"
+        color: "#d5dfe6"
       }}>
         <div style={{ marginBottom: "1rem" }}>
-          <span style={{ color: "#a9b3ba", marginRight: "2rem", cursor: "pointer" }}>Confidentialité</span>
-          <span style={{ color: "#a9b3ba", marginRight: "2rem", cursor: "pointer" }}>Conditions d'utilisation</span>
-          <span style={{ color: "#a9b3ba", cursor: "pointer" }}>Paramètres de cookies</span>
+          <span style={{ color: "#d5dfe6", marginRight: "2rem", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Confidentialité</span>
+          <span style={{ color: "#d5dfe6", marginRight: "2rem", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Conditions d'utilisation</span>
+          <span style={{ color: "#d5dfe6", cursor: "pointer" }} onMouseEnter={e => e.target.style.color="#ff9900"} onMouseLeave={e => e.target.style.color="#d5dfe6"}>Paramètres de cookies</span>
         </div>
-        <p style={{ margin: "0.5rem 0" }}>© {currentYear} SafinPay. Tous droits réservés.</p>
-        <p style={{ margin: "0", fontSize: "0.9rem" }}>En expansion à travers l'Afrique</p>
+        <p style={{ margin: "0.5rem 0", color: "#ffffff", fontWeight: "500" }}>© {currentYear} SafinPay. Tous droits réservés.</p>
+        <p style={{ margin: "0", fontSize: "0.9rem", color: "#d5dfe6" }}>En expansion à travers l'Afrique</p>
       </div>
     </footer>
   );
