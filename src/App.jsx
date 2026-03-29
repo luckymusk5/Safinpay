@@ -55,67 +55,8 @@ export default function App() {
                 <Route path="/register" element={<Register_new />} />
                 <Route path="/product/:id" element={<ProductDetail_new />} />
                 <Route path="/search" element={<Search_new />} />
-
-            {/* Routes principales */}
-            <Routes>
-              {/* Routes publiques - accessibles sans connexion */}
-              <Route path="/" element={<HomeSimple />} />
-              <Route path="/login" element={<Login_new />} />
-              <Route path="/register" element={<Register_new />} />
-              <Route path="/product/:id" element={<ProductDetail_new />} />
-              <Route path="/search" element={<Search_new />} />
-              <Route path="/seller/:sellerId" element={<SellerShop />} />
-              <Route path="/categories" element={<Categories />} />
-
-              {/* Routes protégées - nécessitent authentification */}
-              <Route 
-                path="/cart" 
-                element={
-                  <ProtectedRoute requireAuth={true}>
-                    <Cart_new />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/payment" 
-                element={
-                  <ProtectedRoute requireAuth={true}>
-                    <Payment_new />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/order-confirmation/:orderId" 
-                element={
-                  <ProtectedRoute requireAuth={true}>
-                    <OrderConfirmation_new />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/orders" 
-                element={
-                  <ProtectedRoute requireAuth={true}>
-                    <Orders_new />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/account" 
-                element={
-                  <ProtectedRoute requireAuth={true}>
-                    <Account_new />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/become-seller" 
-                element={
-                  <ProtectedRoute requireAuth={true}>
-                    <BecomeSeller_new />
-                  </ProtectedRoute>
-                } 
-              />
+                <Route path="/seller/:sellerId" element={<SellerShop />} />
+                <Route path="/categories" element={<Categories />} />
 
                 {/* Routes protégées */}
                 <Route path="/cart" element={<ProtectedRoute requireAuth={true}><Cart_new /></ProtectedRoute>} />
@@ -126,6 +67,7 @@ export default function App() {
                 <Route path="/become-seller" element={<ProtectedRoute requireAuth={true}><BecomeSeller_new /></ProtectedRoute>} />
                 <Route path="/seller/dashboard" element={<ProtectedRoute requireAuth={true} requireSeller={true}><SellerDashboard_new /></ProtectedRoute>} />
 
+                {/* Page 404 */}
                 <Route path="*" element={<Page404 />} />
               </Routes>
               <Footer_new />
