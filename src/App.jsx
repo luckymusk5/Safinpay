@@ -19,6 +19,7 @@ import Login_new from "./pages/Login_new";
 import Register_new from "./pages/Register_new";
 import Payment_new from "./pages/Payment_new";
 import OrderConfirmation_new from "./pages/OrderConfirmation_new";
+import AddProduct_new from "./pages/AddProduct_new"; 
 
 // Imports des Contextes
 import { CartProvider } from "./context/CartContext";
@@ -26,7 +27,6 @@ import { WishlistProvider } from "./context/WishlistContext";
 import { AuthProvider } from "./context/AuthContext";
 import { SearchProvider } from "./context/SearchContext";
 
-// COMPOSANT D'ERREUR INTERNE (Aucun import de fichier .png pour éviter le crash)
 const Page404 = () => (
   <div style={{ textAlign: 'center', padding: '100px 20px', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
     <h1 style={{ fontSize: '100px', color: '#003366', margin: '0' }}>404</h1>
@@ -54,6 +54,9 @@ export default function App() {
                 <Route path="/product/:id" element={<ProductDetail_new />} />
                 <Route path="/search" element={<Search_new />} />
 
+                {/* --- CETTE ROUTE EST MAINTENANT LIBRE POUR LE TEST --- */}
+                <Route path="/add-product" element={<AddProduct_new />} />
+
                 {/* Routes protégées */}
                 <Route path="/cart" element={<ProtectedRoute requireAuth={true}><Cart_new /></ProtectedRoute>} />
                 <Route path="/payment" element={<ProtectedRoute requireAuth={true}><Payment_new /></ProtectedRoute>} />
@@ -63,7 +66,6 @@ export default function App() {
                 <Route path="/become-seller" element={<ProtectedRoute requireAuth={true}><BecomeSeller_new /></ProtectedRoute>} />
                 <Route path="/seller/dashboard" element={<ProtectedRoute requireAuth={true} requireSeller={true}><SellerDashboard_new /></ProtectedRoute>} />
 
-                {/* LA ROUTE QUI RÉPARE LE PROBLÈME */}
                 <Route path="*" element={<Page404 />} />
               </Routes>
               <Footer_new />
