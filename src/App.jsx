@@ -10,6 +10,8 @@ import Footer_new from "./components/Footer_new";
 import HomeSimple from "./pages/HomeSimple";
 import ProductDetail_new from "./pages/ProductDetail_new";
 import Cart_new from "./pages/Cart_new";
+import SellerShop from "./pages/SellerShop";
+import Categories from "./pages/Categories";
 import Orders_new from "./pages/Orders_new";
 import Account_new from "./pages/Account_new";
 import SellerDashboard_new from "./pages/SellerDashboard_new";
@@ -53,9 +55,8 @@ export default function App() {
                 <Route path="/register" element={<Register_new />} />
                 <Route path="/product/:id" element={<ProductDetail_new />} />
                 <Route path="/search" element={<Search_new />} />
-
-                {/* --- CETTE ROUTE EST MAINTENANT LIBRE POUR LE TEST --- */}
-                <Route path="/add-product" element={<AddProduct_new />} />
+                <Route path="/seller/:sellerId" element={<SellerShop />} />
+                <Route path="/categories" element={<Categories />} />
 
                 {/* Routes protégées */}
                 <Route path="/cart" element={<ProtectedRoute requireAuth={true}><Cart_new /></ProtectedRoute>} />
@@ -66,6 +67,7 @@ export default function App() {
                 <Route path="/become-seller" element={<ProtectedRoute requireAuth={true}><BecomeSeller_new /></ProtectedRoute>} />
                 <Route path="/seller/dashboard" element={<ProtectedRoute requireAuth={true} requireSeller={true}><SellerDashboard_new /></ProtectedRoute>} />
 
+                {/* Page 404 */}
                 <Route path="*" element={<Page404 />} />
               </Routes>
               <Footer_new />
