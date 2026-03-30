@@ -5,10 +5,13 @@ import { CartContext } from "../context/CartContext";
 import { SearchContext } from "../context/SearchContext";
 
 const NAVY = "#1b3a6b";
+
 const NAV_LINKS = [
   { label: "Accueil", to: "/" },
+  { label: "Catégories", to: "/categories" },           // ← Ajouté
   { label: "Produits", to: "/search" },
   { label: "Fournisseurs", to: "/search" },
+  { label: "Boutique Vendeur", to: "/seller/1" },      // ← Ajouté (SellerStore)
   { label: "Commandes", to: "/orders" },
   { label: "Messages", to: "/account" },
   { label: "Aide", to: "/account" },
@@ -28,11 +31,11 @@ export default function Navbar() {
   const { user, logout } = useContext(AuthContext) || {};
   const { cartItems } = useContext(CartContext) || { cartItems: [] };
   const { searchTerm, setSearchTerm } = useContext(SearchContext) || { searchTerm: "", setSearchTerm: () => {} };
+
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const w = useWindowWidth();
   const isMobile = w < 768;
-  const isTablet = w < 1024;
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -41,7 +44,6 @@ export default function Navbar() {
     }
   };
 
-  // Close mobile menu on navigation
   const closeMenu = () => setMenuOpen(false);
 
   return (
@@ -53,7 +55,6 @@ export default function Navbar() {
         gap: isMobile ? "0.75rem" : "1.5rem",
         maxWidth: "1400px", margin: "0 auto"
       }}>
-
         {/* Hamburger button (mobile only) */}
         {isMobile && (
           <button
@@ -95,7 +96,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Search bar — hidden on mobile (shown in mobile menu) */}
+        {/* Search bar — hidden on mobile */}
         {!isMobile && (
           <form onSubmit={handleSearch} style={{ flex: 1, display: "flex", maxWidth: "680px" }}>
             <input
@@ -107,8 +108,7 @@ export default function Navbar() {
                 flex: 1, padding: "0.65rem 1rem",
                 border: `2px solid ${NAVY}`, borderRight: "none",
                 borderRadius: "6px 0 0 6px", fontSize: "0.93rem",
-                outline: "none", color: "#333", background: "white", fontFamily: "inherit",
-                transition: "box-shadow 0.2s"
+                outline: "none", color: "#333", background: "white",
               }}
               onFocus={e => e.target.style.boxShadow = `0 0 0 3px rgba(27,58,107,0.15)`}
               onBlur={e => e.target.style.boxShadow = "none"}
@@ -117,8 +117,6 @@ export default function Navbar() {
               padding: "0 1.3rem", background: NAVY, color: "white",
               border: "none", borderRadius: "0 6px 6px 0", cursor: "pointer",
               fontSize: "0.88rem", fontWeight: "700",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "inherit", transition: "background 0.2s"
             }}
               onMouseEnter={e => e.currentTarget.style.background = "#14306a"}
               onMouseLeave={e => e.currentTarget.style.background = NAVY}
@@ -130,7 +128,7 @@ export default function Navbar() {
 
         {/* Right account links — hidden on mobile */}
         {!isMobile && (
-          <div style={{ display: "flex", gap: isTablet ? "1.1rem" : "1.8rem", alignItems: "center", flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: "1.8rem", alignItems: "center", flexShrink: 0 }}>
             {user ? (
               <>
                 <span style={{ color: "#444", fontSize: "0.9rem", fontWeight: "500" }}>
@@ -138,8 +136,7 @@ export default function Navbar() {
                 </span>
                 <button onClick={logout} style={{
                   background: "none", border: "none", cursor: "pointer",
-                  color: "#444", fontSize: "0.9rem", fontWeight: "500", padding: 0, fontFamily: "inherit",
-                  transition: "color 0.2s"
+                  color: "#444", fontSize: "0.9rem", fontWeight: "500", padding: 0
                 }}
                   onMouseEnter={e => e.currentTarget.style.color = NAVY}
                   onMouseLeave={e => e.currentTarget.style.color = "#444"}
@@ -148,16 +145,18 @@ export default function Navbar() {
                 </button>
               </>
             ) : (
-              <Link to="/login" style={{ color: "#444", textDecoration: "none", fontSize: "0.9rem", fontWeight: "500", transition: "color 0.2s" }}
+              <Link to="/login" style={{ color: "#444", textDecoration: "none", fontSize: "0.9rem", fontWeight: "500" }}
                 onMouseEnter={e => e.currentTarget.style.color = NAVY}
                 onMouseLeave={e => e.currentTarget.style.color = "#444"}
               >Compte</Link>
             )}
-            <Link to="/account" style={{ color: "#444", textDecoration: "none", fontSize: "0.9rem", fontWeight: "500", transition: "color 0.2s" }}
+
+            <Link to="/account" style={{ color: "#444", textDecoration: "none", fontSize: "0.9rem", fontWeight: "500" }}
               onMouseEnter={e => e.currentTarget.style.color = NAVY}
               onMouseLeave={e => e.currentTarget.style.color = "#444"}
             >Favoris</Link>
-            <Link to="/cart" style={{ color: "#444", textDecoration: "none", fontSize: "0.9rem", fontWeight: "500", position: "relative", transition: "color 0.2s" }}
+
+            <Link to="/cart" style={{ color: "#444", textDecoration: "none", fontSize: "0.9rem", fontWeight: "500", position: "relative" }}
               onMouseEnter={e => e.currentTarget.style.color = NAVY}
               onMouseLeave={e => e.currentTarget.style.color = "#444"}
             >
@@ -174,13 +173,14 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
+
             {user?.is_seller && (
               <Link to="/seller/dashboard" style={{ color: NAVY, textDecoration: "none", fontSize: "0.9rem", fontWeight: "700" }}>Vendre</Link>
             )}
           </div>
         )}
 
-        {/* Mobile: cart icon (right) */}
+        {/* Mobile: cart icon */}
         {isMobile && (
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "1rem" }}>
             <Link to="/cart" onClick={closeMenu} style={{ color: "#444", textDecoration: "none", fontSize: "0.9rem", fontWeight: "500", position: "relative" }}>
@@ -206,15 +206,28 @@ export default function Navbar() {
         <div style={{ borderTop: "1px solid #f0f0f0" }}>
           <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1.5rem", display: "flex", overflowX: "auto" }}>
             {NAV_LINKS.map(({ label, to }) => (
-              <Link key={label} to={to} style={{
-                padding: "0.5rem 1.1rem", color: "#333", textDecoration: "none",
-                fontSize: "0.88rem", fontWeight: "500",
-                borderBottom: "2px solid transparent",
-                transition: "color 0.2s, border-color 0.2s",
-                display: "block", whiteSpace: "nowrap"
-              }}
-                onMouseEnter={e => { e.currentTarget.style.color = NAVY; e.currentTarget.style.borderBottomColor = NAVY; }}
-                onMouseLeave={e => { e.currentTarget.style.color = "#333"; e.currentTarget.style.borderBottomColor = "transparent"; }}
+              <Link 
+                key={label} 
+                to={to} 
+                style={{
+                  padding: "0.5rem 1.1rem", 
+                  color: "#333", 
+                  textDecoration: "none",
+                  fontSize: "0.88rem", 
+                  fontWeight: "500",
+                  borderBottom: "2px solid transparent",
+                  transition: "color 0.2s, border-color 0.2s",
+                  display: "block", 
+                  whiteSpace: "nowrap"
+                }}
+                onMouseEnter={e => { 
+                  e.currentTarget.style.color = NAVY; 
+                  e.currentTarget.style.borderBottomColor = NAVY; 
+                }}
+                onMouseLeave={e => { 
+                  e.currentTarget.style.color = "#333"; 
+                  e.currentTarget.style.borderBottomColor = "transparent"; 
+                }}
               >
                 {label}
               </Link>
@@ -224,13 +237,10 @@ export default function Navbar() {
       )}
 
       {/* ── Mobile dropdown menu ── */}
-      {isMobile && (
+      {isMobile && menuOpen && (
         <div style={{
-          overflow: "hidden",
-          maxHeight: menuOpen ? "600px" : "0",
-          transition: "max-height 0.35s ease",
           background: "white",
-          borderTop: menuOpen ? "1px solid #f0f0f0" : "none"
+          borderTop: "1px solid #f0f0f0"
         }}>
           {/* Mobile search */}
           <form onSubmit={e => { handleSearch(e); closeMenu(); }} style={{ display: "flex", margin: "0.75rem 1rem" }}>
@@ -243,7 +253,7 @@ export default function Navbar() {
                 flex: 1, padding: "0.6rem 0.85rem",
                 border: `2px solid ${NAVY}`, borderRight: "none",
                 borderRadius: "6px 0 0 6px", fontSize: "0.9rem",
-                outline: "none", color: "#333", background: "white"
+                outline: "none"
               }}
             />
             <button type="submit" style={{
@@ -257,13 +267,19 @@ export default function Navbar() {
 
           {/* Nav links */}
           {NAV_LINKS.map(({ label, to }) => (
-            <Link key={label} to={to} onClick={closeMenu} style={{
-              display: "block", padding: "0.7rem 1.25rem",
-              color: "#333", textDecoration: "none",
-              fontSize: "0.95rem", fontWeight: "500",
-              borderBottom: "1px solid #f5f5f5",
-              transition: "background 0.15s, color 0.15s"
-            }}
+            <Link 
+              key={label} 
+              to={to} 
+              onClick={closeMenu} 
+              style={{
+                display: "block", 
+                padding: "0.7rem 1.25rem",
+                color: "#333", 
+                textDecoration: "none",
+                fontSize: "0.95rem", 
+                fontWeight: "500",
+                borderBottom: "1px solid #f5f5f5"
+              }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(27,58,107,0.05)"; e.currentTarget.style.color = NAVY; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#333"; }}
             >
@@ -271,7 +287,7 @@ export default function Navbar() {
             </Link>
           ))}
 
-          {/* Account links */}
+          {/* Account links in mobile menu */}
           <div style={{ padding: "0.5rem 1rem 0.75rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
             {user ? (
               <>
@@ -294,13 +310,11 @@ export default function Navbar() {
               }}>Connexion</Link>
             )}
             <Link to="/account" onClick={closeMenu} style={{
-              color: "#444", textDecoration: "none", fontSize: "0.88rem",
-              padding: "0.4rem 0"
+              color: "#444", textDecoration: "none", fontSize: "0.88rem", padding: "0.4rem 0"
             }}>Favoris</Link>
             {user?.is_seller && (
               <Link to="/seller/dashboard" onClick={closeMenu} style={{
-                color: NAVY, textDecoration: "none", fontSize: "0.88rem",
-                fontWeight: "700", padding: "0.4rem 0"
+                color: NAVY, textDecoration: "none", fontSize: "0.88rem", fontWeight: "700", padding: "0.4rem 0"
               }}>Vendre</Link>
             )}
           </div>
