@@ -20,6 +20,7 @@ import Register_new from "./pages/Register_new";
 import Payment_new from "./pages/Payment_new";
 import OrderConfirmation_new from "./pages/OrderConfirmation_new";
 import AddProduct_new from "./pages/AddProduct_new"; 
+import MyReviews_new from "./pages/MyReviews_new"; 
 
 // Imports des Contextes
 import { CartProvider } from "./context/CartContext";
@@ -47,24 +48,32 @@ export default function App() {
             <Router>
               <Navbar_new />
               <Routes>
-                {/* Routes publiques */}
+                {/* 1. ROUTE DE TEST PRIORITAIRE (Libre de toute protection) */}
+                <Route path="/my-reviews" element={<MyReviews_new />} />
+
+                {/* --- ROUTES PUBLIQUES --- */}
                 <Route path="/" element={<HomeSimple />} />
                 <Route path="/login" element={<Login_new />} />
                 <Route path="/register" element={<Register_new />} />
                 <Route path="/product/:id" element={<ProductDetail_new />} />
                 <Route path="/search" element={<Search_new />} />
 
-                {/* --- CETTE ROUTE EST MAINTENANT LIBRE POUR LE TEST --- */}
-                <Route path="/add-product" element={<AddProduct_new />} />
+                {/* --- ROUTES PROTÉGÉES (CLIENT) --- */}
+                <Route element={<ProtectedRoute requireAuth={true} />}>
+                  <Route path="/cart" element={<Cart_new />} />
+                  <Route path="/payment" element={<Payment_new />} />
+                  <Route path="/order-confirmation/:orderId" element={<OrderConfirmation_new />} />
+                  <Route path="/orders" element={<Orders_new />} />
+                  <Route path="/account" element={<Account_new />} />
+                  <Route path="/become-seller" element={<BecomeSeller_new />} />
+                  {/* Note: /my-reviews est temporairement sorti d'ici pour le test */}
+                </Route>
 
-                {/* Routes protégées */}
-                <Route path="/cart" element={<ProtectedRoute requireAuth={true}><Cart_new /></ProtectedRoute>} />
-                <Route path="/payment" element={<ProtectedRoute requireAuth={true}><Payment_new /></ProtectedRoute>} />
-                <Route path="/order-confirmation/:orderId" element={<ProtectedRoute requireAuth={true}><OrderConfirmation_new /></ProtectedRoute>} />
-                <Route path="/orders" element={<ProtectedRoute requireAuth={true}><Orders_new /></ProtectedRoute>} />
-                <Route path="/account" element={<ProtectedRoute requireAuth={true}><Account_new /></ProtectedRoute>} />
-                <Route path="/become-seller" element={<ProtectedRoute requireAuth={true}><BecomeSeller_new /></ProtectedRoute>} />
-                <Route path="/seller/dashboard" element={<ProtectedRoute requireAuth={true} requireSeller={true}><SellerDashboard_new /></ProtectedRoute>} />
+                {/* --- ROUTES PROTÉGÉES (VENDEUR) --- */}
+                <Route element={<ProtectedRoute requireAuth={true} requireSeller={true} />}>
+                  <Route path="/seller/dashboard" element={<SellerDashboard_new />} />
+                  <Route path="/add-product" element={<AddProduct_new />} />
+                </Route>
 
                 <Route path="*" element={<Page404 />} />
               </Routes>
