@@ -22,6 +22,8 @@ import Register_new from "./pages/Register_new";
 import Payment_new from "./pages/Payment_new";
 import OrderConfirmation_new from "./pages/OrderConfirmation_new";
 import AddProduct_new from "./pages/AddProduct_new";
+import Admin_Dashboard from "./pages/Admin_Dashboard";
+
 
 // Contexts
 import { CartProvider } from "./context/CartContext";
@@ -75,6 +77,7 @@ export default function App() {
                 <Route path="/product/:id" element={<ProductDetail_new />} />
                 <Route path="/search" element={<Search_new />} />
                 
+                
                 {/* Correction ici : on utilise SellerStore et non SellerShop */}
                 <Route path="/seller/:sellerId" element={<SellerStore />} />
                 
@@ -88,7 +91,7 @@ export default function App() {
                 <Route path="/account" element={<ProtectedRoute requireAuth={true}><Account_new /></ProtectedRoute>} />
                 <Route path="/become-seller" element={<ProtectedRoute requireAuth={true}><BecomeSeller_new /></ProtectedRoute>} />
                 <Route path="/seller/dashboard" element={<ProtectedRoute requireAuth={true} requireSeller={true}><SellerDashboard_new /></ProtectedRoute>} />
-
+                <Route path="/admin" element={<ProtectedRoute requireAuth={true}><Admin_Dashboard /></ProtectedRoute>} />
                 {/* Page 404 */}
                 <Route path="*" element={<Page404 />} />
               </Routes>
