@@ -11,6 +11,7 @@ import HomeSimple from "./pages/HomeSimple";
 import ProductDetail_new from "./pages/ProductDetail_new";
 import Cart_new from "./pages/Cart_new";
 import SellerStore from "./pages/SellerStore";          // ← Correctement importé
+import Boutiques_new from "./pages/Boutiques_new";
 import Categories from "./pages/Categories";
 import Orders_new from "./pages/Orders_new";
 import Account_new from "./pages/Account_new";
@@ -75,11 +76,14 @@ export default function App() {
                 <Route path="/login" element={<Login_new />} />
                 <Route path="/register" element={<Register_new />} />
                 <Route path="/product/:id" element={<ProductDetail_new />} />
+                <Route path="/boutiques" element={<Boutiques_new />} />
+                <Route path="/boutiques/:boutiqueId" element={<SellerStore />} />
                 <Route path="/search" element={<Search_new />} />
                 
                 
                 {/* Correction ici : on utilise SellerStore et non SellerShop */}
                 <Route path="/seller/:sellerId" element={<SellerStore />} />
+                <Route path="/seller/store" element={<ProtectedRoute requireAuth={true} requireSeller={true}><SellerStore /></ProtectedRoute>} />
                 
                 <Route path="/categories" element={<Categories />} />
 

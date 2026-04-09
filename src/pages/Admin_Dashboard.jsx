@@ -16,18 +16,35 @@ export default function AdminDashboard() {
   });
 
   const [recentOrders, setRecentOrders] = useState([]);
+  const [fraudSignals, setFraudSignals] = useState({
+    summary: {
+      total_boutiques: 0,
+      flagged_boutiques: 0,
+      high_risk: 0,
+      medium_risk: 0,
+      low_risk: 0,
+    },
+    boutiques: [],
+    flagged_boutiques: [],
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAdminStats = async () => {
       try {
-        // Statistiques générales
-        const statsRes = await api.get("/admin/stats/");
-        setStats(statsRes.data);
+        const [statsRes, ordersRes, fraudRes] = await Promise.all([
+          api.get("/admin/stats/"),
+          api.get("/admin/recent-orders/"),
+          api.get("/admin/fraud-signals/"),
+        ]);
 
-        // Commandes récentes
-        const ordersRes = await api.get("/admin/recent-orders/");
-        setRecentOrders(ordersRes.data.slice(0, 5));
+        setStats(statsRes.data);
+        setRecentOrders((ordersRes.data || []).slice(0, 5));
+        setFraudSignals({
+          summary: fraudRes.data?.summary || {},
+          boutiques: fraudRes.data?.boutiques || [],
+          flagged_boutiques: fraudRes.data?.flagged_boutiques || [],
+        });
       } catch (err) {
         console.error("Erreur chargement stats admin:", err);
       } finally {
@@ -99,6 +116,13 @@ export default function AdminDashboard() {
               <p style={{ color: "#666", margin: "0 0 0.5rem" }}>Vendeurs en Attente</p>
               <p style={{ fontSize: "2.2rem", fontWeight: "700", color: "#ff9900" }}>{stats.pendingSellers}</p>
             </div>
+
+            <div style={{ background: "white", padding: "1.8rem", borderRadius: "8px", boxShadow: "0 2px 10px rgba(0,0,0,0.08)" }}>
+              <p style={{ color: "#666", margin: "0 0 0.5rem" }}>Boutiques à surveiller</p>
+              <p style={{ fontSize: "2.2rem", fontWeight: "700", color: "#c0392b" }}>
+                {fraudSignals.summary?.flagged_boutiques || 0}
+              </p>
+            </div>
           </div>
 
           {/* Sections Principales */}
@@ -158,6 +182,79 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          <div style={{ background: "white", borderRadius: "8px", padding: "2rem", boxShadow: "0 2px 10px rgba(0,0,0,0.08)", marginTop: "2rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
+              <div>
+                <h2 style={{ margin: 0, color: "#1b3a6b" }}>Surveillance fraude boutiques</h2>
+                <p style={{ margin: "0.35rem 0 0", color: "#666" }}>
+                  Détection automatique basée sur la vérification, les annulations, les avis et l’activité commerciale.
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <span style={adminBadgeStyle}>Total boutiques: {fraudSignals.summary?.total_boutiques || 0}</span>
+                <span style={adminBadgeStyle}>Haute alerte: {fraudSignals.summary?.high_risk || 0}</span>
+                <span style={adminBadgeStyle}>Alerte moyenne: {fraudSignals.summary?.medium_risk || 0}</span>
+              </div>
+            </div>
+
+            {loading ? (
+              <p>Chargement des signaux de fraude...</p>
+            ) : (fraudSignals.flagged_boutiques || []).length > 0 ? (
+              <div style={{ display: "grid", gap: "1rem" }}>
+                {fraudSignals.flagged_boutiques.slice(0, 5).map((boutique) => {
+                  const riskColor = boutique.risk_level === "high" ? "#c0392b" : boutique.risk_level === "medium" ? "#ff9900" : "#1b3a6b";
+                  return (
+                    <div
+                      key={boutique.id}
+                      style={{
+                        border: "1px solid #e7e7e7",
+                        borderRadius: "10px",
+                        padding: "1rem",
+                        display: "grid",
+                        gridTemplateColumns: "1.6fr 0.8fr 1.2fr",
+                        gap: "1rem",
+                        alignItems: "center",
+                        background: "#fafbfc"
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+                          <strong style={{ color: "#1b3a6b" }}>{boutique.name}</strong>
+                          <span style={{ ...statusChipStyle, background: `${riskColor}20`, color: riskColor }}>
+                            {boutique.risk_level === "high" ? "Risque élevé" : boutique.risk_level === "medium" ? "Risque moyen" : "Risque faible"}
+                          </span>
+                        </div>
+                        <p style={{ margin: "0.35rem 0 0", color: "#666", fontSize: "0.9rem" }}>
+                          {boutique.reasons?.length ? boutique.reasons.join(" · ") : "Aucun motif détaillé"}
+                        </p>
+                      </div>
+
+                      <div style={{ textAlign: "center" }}>
+                        <div style={{ fontSize: "1.8rem", fontWeight: 800, color: riskColor }}>{boutique.risk_score}</div>
+                        <div style={{ color: "#666", fontSize: "0.82rem" }}>Score de risque</div>
+                      </div>
+
+                      <div>
+                        <div style={{ height: "10px", borderRadius: "999px", background: "#e8edf3", overflow: "hidden", marginBottom: "0.5rem" }}>
+                          <div style={{ width: `${Math.min(100, boutique.risk_score)}%`, height: "100%", background: riskColor }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", color: "#666", fontSize: "0.85rem" }}>
+                          <span>{boutique.product_count} produit{boutique.product_count > 1 ? "s" : ""}</span>
+                          <span>{boutique.total_orders} commande{boutique.total_orders > 1 ? "s" : ""}</span>
+                          <span>{boutique.review_count} avis</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ padding: "1rem", borderRadius: "10px", background: "#edf7ed", color: "#1e6b3a" }}>
+                Aucun signal de fraude prioritaire détecté pour le moment.
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
       <Footer_new />
@@ -183,4 +280,25 @@ actionButtonStyle[':hover'] = {
   backgroundColor: "#1b3a6b",
   color: "white",
   transform: "translateY(-2px)"
+};
+
+const adminBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "0.45rem 0.75rem",
+  borderRadius: "999px",
+  background: "#f2f5fa",
+  color: "#1b3a6b",
+  fontSize: "0.85rem",
+  fontWeight: 600,
+  border: "1px solid #e0e7f0",
+};
+
+const statusChipStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "0.3rem 0.65rem",
+  borderRadius: "999px",
+  fontSize: "0.8rem",
+  fontWeight: 700,
 };

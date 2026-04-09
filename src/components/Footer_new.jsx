@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 const NAVY = "#1b3a6b";
 
@@ -45,6 +46,7 @@ function useWindowWidth() {
 }
 
 export default function Footer_new() {
+  const { user } = useContext(AuthContext) || {};
   const currentYear = new Date().getFullYear();
   const w = useWindowWidth();
   const isMobile = w < 640;
@@ -100,8 +102,18 @@ export default function Footer_new() {
             <h4 style={{ fontSize: "0.875rem", fontWeight: "700", color: "#1a1a1a", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Vendeurs
             </h4>
-            <FooterLink to="/become-seller">Devenir vendeur</FooterLink>
-            <FooterLink to="/seller/dashboard">Dashboard</FooterLink>
+            {user?.is_seller ? (
+              <>
+                <FooterLink to="/seller/dashboard">Dashboard vendeur</FooterLink>
+                <FooterLink to="/seller/store">Ma boutique</FooterLink>
+                <FooterLink>Ajouter un produit</FooterLink>
+              </>
+            ) : (
+              <>
+                <FooterLink to="/boutiques">Découvrir les boutiques</FooterLink>
+                <FooterLink to="/become-seller">Devenir vendeur</FooterLink>
+              </>
+            )}
             <FooterLink>Académie vendeur</FooterLink>
             <FooterLink>Conditions de vente</FooterLink>
           </div>

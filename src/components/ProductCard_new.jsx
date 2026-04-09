@@ -3,10 +3,13 @@ import { useState, useContext } from "react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 
+const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_ORIGIN || "https://safinpaybackend-production.up.railway.app";
+
 export default function ProductCard({ product }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const [addedMessage, setAddedMessage] = useState("");
   const navigate = useNavigate();
   
   const cartContext = useContext(CartContext);
@@ -42,9 +45,14 @@ export default function ProductCard({ product }) {
     }
 
     setIsAdding(true);
+    setAddedMessage("");
     
     try {
-      addToCart(normalizedProduct, quantity);
+      const result = await addToCart(normalizedProduct, quantity);
+      if (result) {
+        setAddedMessage("Ajouté au panier");
+        setTimeout(() => setAddedMessage(""), 1800);
+      }
       setQuantity(1); // Réinitialiser la quantité
     } catch (err) {
       console.error("Erreur:", err);
@@ -74,6 +82,7 @@ export default function ProductCard({ product }) {
   
   const divisor = (1 - remise / 100);
   const originalPrice = divisor > 0 ? Math.round(prix / divisor) : prix;
+  const boutiqueLink = normalizedProduct.seller_id ? `/boutiques/${normalizedProduct.seller_id}` : null;
 
   // Gestion de l'image - peut être null ou une URL externe
   let finalImageUrl = normalizedProduct.image;
@@ -82,7 +91,7 @@ export default function ProductCard({ product }) {
     finalImageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23f0f0f0' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='14'%3E📦 Pas de photo%3C/text%3E%3C/svg%3E";
   } else if (!finalImageUrl.startsWith('http') && !finalImageUrl.startsWith('data:')) {
     // Si c'est une URL relative du backend, ajouter l'URL de base
-    finalImageUrl = `http://127.0.0.1:8000${finalImageUrl}`;
+    finalImageUrl = `${BACKEND_ORIGIN}${finalImageUrl}`;
   }
   // Sinon, c'est déjà une URL complète (du JSON), on la garde telle quelle
 
@@ -163,8 +172,20 @@ export default function ProductCard({ product }) {
 
       {/* Détails vendeur */}
       <div style={{ marginTop: "0.75rem", fontSize: "0.85rem", color: "#666" }}>
-        <p>Vendu par: {normalizedProduct.seller_name}</p>
+        {boutiqueLink ? (
+          <Link to={boutiqueLink} style={{ color: "#666", textDecoration: "none" }}>
+            <p style={{ margin: 0 }}>Vendu par: {normalizedProduct.seller_name}</p>
+          </Link>
+        ) : (
+          <p style={{ margin: 0 }}>Vendu par: {normalizedProduct.seller_name}</p>
+        )}
       </div>
+
+      {addedMessage && (
+        <div style={{ marginTop: "0.5rem", color: "#28a745", fontWeight: 700, fontSize: "0.85rem" }}>
+          {addedMessage}
+        </div>
+      )}
     </div>
   );
 }

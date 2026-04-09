@@ -1,8 +1,34 @@
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useMemo } from "react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+
+const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_ORIGIN || "https://safinpaybackend-production.up.railway.app";
+const WORLD_MAP_URL = "https://www.openstreetmap.org/export/embed.html?bbox=-180%2C-60%2C180%2C85&layer=mapnik";
+
+function formatMoney(amount, currency) {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: currency === "XOF" ? 0 : 2,
+  }).format(Number(amount) || 0);
+}
+
+function buildReceiptUrl(orderId, payload) {
+  const params = new URLSearchParams();
+  params.set("buyer", payload.buyer || "");
+  params.set("email", payload.email || "");
+  params.set("payment_method", payload.paymentMethod || "");
+  params.set("currency", payload.currency || "XOF");
+  params.set("fx_rate", String(payload.fxRate || 1));
+  params.set("amount_fcfa", String(payload.amountFcfa || 0));
+  params.set("amount_local", String(payload.amountLocal || 0));
+  params.set("shipping_country", payload.shippingCountry || "");
+  params.set("paid_at", payload.paidAt || "");
+  params.set("items", JSON.stringify(payload.items || []));
+  return `${BACKEND_ORIGIN}/api/receipts/${orderId}.pdf?${params.toString()}`;
+}
 
 export default function Payment_new() {
   const navigate = useNavigate();
@@ -14,6 +40,10 @@ export default function Payment_new() {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [loading, setLoading] = useState(false);
   const [orderLoading, setOrderLoading] = useState(true);
+  const [fxRates, setFxRates] = useState({});
+  const [fxLoading, setFxLoading] = useState(true);
+  const [fxError, setFxError] = useState("");
+  const [selectedCurrency, setSelectedCurrency] = useState("XOF");
 
   // États du formulaire
   const [formData, setFormData] = useState({
@@ -45,6 +75,53 @@ export default function Payment_new() {
   const shipping = subtotal > 500000 ? 0 : 5000;
   const tax = Math.round(subtotal * 0.18);
   const total = Math.round(subtotal + shipping + tax);
+  const exchangeRate = selectedCurrency === "XOF" ? 1 : fxRates[selectedCurrency] || 0;
+  const convertedTotal = useMemo(() => {
+    if (selectedCurrency === "XOF") return total;
+    if (!exchangeRate) return 0;
+    return Math.round(total * exchangeRate * 100) / 100;
+  }, [selectedCurrency, exchangeRate, total]);
+
+  const availableCurrencies = useMemo(() => {
+    const currencies = Object.keys(fxRates || {}).filter((code) => code !== "XOF").sort();
+    return ["XOF", ...currencies];
+  }, [fxRates]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRates = async () => {
+      setFxLoading(true);
+      setFxError("");
+      try {
+        const response = await fetch("https://open.er-api.com/v6/latest/XOF");
+        const data = await response.json();
+        if (!response.ok || data?.result !== "success" || !data?.rates) {
+          throw new Error("Impossible de charger les taux de change");
+        }
+        if (!cancelled) {
+          setFxRates({ ...data.rates, XOF: 1 });
+        }
+      } catch (error) {
+        console.error("Erreur taux de change:", error);
+        if (!cancelled) {
+          setFxError("Les taux de change en temps réel sont temporairement indisponibles.");
+          setFxRates((current) => (current.XOF ? current : { XOF: 1 }));
+        }
+      } finally {
+        if (!cancelled) {
+          setFxLoading(false);
+        }
+      }
+    };
+
+    loadRates();
+    const timer = window.setInterval(loadRates, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -137,6 +214,9 @@ export default function Payment_new() {
       const paymentPayload = {
         order_id: orderId,
         amount: total,
+        amount_local: convertedTotal,
+        currency: selectedCurrency,
+        exchange_rate: exchangeRate || 1,
         payment_method: paymentMethod,
         customer_info: {
           name: `${formData.firstName} ${formData.lastName}`,
@@ -152,6 +232,24 @@ export default function Payment_new() {
       // Simulation du paiement (en production, vous utiliseriez Stripe, PayPal, etc.)
       console.log("Traitement du paiement:", paymentPayload);
 
+      const paidAt = new Date().toLocaleString("fr-FR");
+      const receiptUrl = buildReceiptUrl(orderId, {
+        buyer: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        paymentMethod,
+        currency: selectedCurrency,
+        fxRate: exchangeRate || 1,
+        amountFcfa: total,
+        amountLocal: convertedTotal,
+        shippingCountry: formData.country,
+        paidAt,
+        items: cartItems.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: parseFloat(item.price) || 0,
+        })),
+      });
+
       // Marquer la commande comme payée
       await api.patch(`/orders/${orderId}/update_status/`, {
         status: "processing"
@@ -162,7 +260,30 @@ export default function Payment_new() {
 
       // Rediriger vers la confirmation
       navigate(`/order-confirmation/${orderId}`, {
-        state: { orderData: orderResponse.data, total }
+        state: {
+          orderData: orderResponse.data,
+          total,
+          selectedCurrency,
+          exchangeRate: exchangeRate || 1,
+          convertedTotal,
+          receiptUrl,
+          receiptPayload: {
+            buyer: `${formData.firstName} ${formData.lastName}`.trim(),
+            email: formData.email,
+            paymentMethod,
+            currency: selectedCurrency,
+            fxRate: exchangeRate || 1,
+            amountFcfa: total,
+            amountLocal: convertedTotal,
+            shippingCountry: formData.country,
+            paidAt,
+            items: cartItems.map((item) => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: parseFloat(item.price) || 0,
+            })),
+          }
+        }
       });
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
@@ -521,6 +642,89 @@ export default function Payment_new() {
                     Les détails du virement vous seront envoyés par email après confirmation
                   </div>
                 )}
+
+                <div style={{
+                  marginTop: "1.5rem",
+                  padding: "1.25rem",
+                  borderRadius: "12px",
+                  border: "1px solid #d7e3f2",
+                  background: "linear-gradient(180deg, #f8fbff 0%, #ffffff 100%)"
+                }}>
+                  <h3 style={{ margin: "0 0 0.75rem", color: "#1b3a6b" }}>Taux de change en temps réel</h3>
+                  <p style={{ margin: "0 0 1rem", color: "#667085", fontSize: "0.92rem", lineHeight: 1.6 }}>
+                    Les paiements étrangers et locaux utilisent le taux actuel, afin d’éviter une valeur fixe qui devient vite fausse quand les monnaies évoluent.
+                  </p>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "600" }}>Devise de paiement</label>
+                      <select
+                        value={selectedCurrency}
+                        onChange={(e) => setSelectedCurrency(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "0.75rem",
+                          borderRadius: "4px",
+                          border: "1px solid #ddd",
+                          fontSize: "1rem"
+                        }}
+                      >
+                        {availableCurrencies.map((currency) => (
+                          <option key={currency} value={currency}>
+                            {currency}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "600" }}>Total converti</label>
+                      <div style={{
+                        width: "100%",
+                        padding: "0.9rem 0.85rem",
+                        borderRadius: "4px",
+                        border: "1px solid #ddd",
+                        background: "#f8fafc",
+                        fontWeight: 700,
+                        color: "#1b3a6b"
+                      }}>
+                        {selectedCurrency === "XOF" ? formatMoney(total, "XOF") : `${convertedTotal.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${selectedCurrency}`}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", alignItems: "start" }}>
+                    <div style={{ fontSize: "0.9rem", color: "#475467", lineHeight: 1.6 }}>
+                      <p style={{ margin: "0 0 0.35rem" }}>
+                        <strong>Taux actuel :</strong> {fxLoading ? "chargement..." : selectedCurrency === "XOF" ? "1 XOF = 1 XOF" : `1 XOF = ${(exchangeRate || 0).toFixed(6)} ${selectedCurrency}`}
+                      </p>
+                      <p style={{ margin: "0 0 0.35rem" }}>
+                        <strong>Total FCFA :</strong> {formatMoney(total, "XOF")}
+                      </p>
+                      {selectedCurrency !== "XOF" && (
+                        <p style={{ margin: 0 }}>
+                          <strong>Équivalent devise :</strong> {convertedTotal.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency}
+                        </p>
+                      )}
+                      {fxError && <p style={{ margin: "0.6rem 0 0", color: "#b42318" }}>{fxError}</p>}
+                    </div>
+
+                    <div style={{
+                      background: "#0f172a",
+                      color: "white",
+                      borderRadius: "12px",
+                      padding: "1rem",
+                      boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.08)"
+                    }}>
+                      <p style={{ margin: 0, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.78 }}>
+                        Paiement international
+                      </p>
+                      <p style={{ margin: "0.45rem 0 0", lineHeight: 1.6 }}>
+                        Le système peut encaisser depuis l’étranger ou ici, et recalculera le montant selon le taux live choisi.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Bouton de validation */}
@@ -540,7 +744,7 @@ export default function Payment_new() {
                   transition: "background-color 0.3s"
                 }}
               >
-                {loading ? "Traitement..." : `Payer ${total.toLocaleString()} FCFA`}
+                {loading ? "Traitement..." : `Payer ${selectedCurrency === "XOF" ? total.toLocaleString() + " FCFA" : `${convertedTotal.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${selectedCurrency}`}`}
               </button>
             </form>
           </div>
@@ -608,8 +812,41 @@ export default function Payment_new() {
                 color: "#007bff"
               }}>
                 <span>TOTAL</span>
-                <span>{total.toLocaleString()} FCFA</span>
+                <span>{formatMoney(total, "XOF")}</span>
               </div>
+
+              {selectedCurrency !== "XOF" && (
+                <div style={{
+                  marginTop: "0.75rem",
+                  padding: "0.85rem 1rem",
+                  background: "#f8fafc",
+                  borderRadius: "4px",
+                  border: "1px dashed #cfd8e3",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "1rem",
+                  color: "#344054",
+                  fontWeight: 600
+                }}>
+                  <span>Total converti</span>
+                  <span>{convertedTotal.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency}</span>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: "1.5rem" }}>
+              <h4 style={{ margin: "0 0 0.75rem", color: "#333" }}>Carte mondiale OpenStreetMap</h4>
+              <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e0e0e0" }}>
+                <iframe
+                  title="Carte mondiale OpenStreetMap"
+                  src={WORLD_MAP_URL}
+                  style={{ width: "100%", height: "260px", border: 0 }}
+                  loading="lazy"
+                />
+              </div>
+              <p style={{ margin: "0.75rem 0 0", color: "#666", fontSize: "0.85rem", lineHeight: 1.6 }}>
+                Vue mondiale pour situer le service et le paiement international. Le reçu PDF sera accessible après confirmation.
+              </p>
             </div>
 
             {/* Informations supplémentaires */}

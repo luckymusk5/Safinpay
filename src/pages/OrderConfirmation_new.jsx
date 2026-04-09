@@ -1,7 +1,24 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
+
+const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_ORIGIN || "https://safinpaybackend-production.up.railway.app";
+
+function buildReceiptUrl(orderId, payload = {}) {
+  const params = new URLSearchParams();
+  params.set("buyer", payload.buyer || "");
+  params.set("email", payload.email || "");
+  params.set("payment_method", payload.paymentMethod || "");
+  params.set("currency", payload.currency || "XOF");
+  params.set("fx_rate", String(payload.fxRate || 1));
+  params.set("amount_fcfa", String(payload.amountFcfa || payload.total || 0));
+  params.set("amount_local", String(payload.amountLocal || payload.total || 0));
+  params.set("shipping_country", payload.shippingCountry || "");
+  params.set("paid_at", payload.paidAt || "");
+  params.set("items", JSON.stringify(payload.items || []));
+  return `${BACKEND_ORIGIN}/api/receipts/${orderId}.pdf?${params.toString()}`;
+}
 
 export default function OrderConfirmation_new() {
   const { orderId } = useParams();
@@ -12,6 +29,24 @@ export default function OrderConfirmation_new() {
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const receiptPayload = location.state?.receiptPayload || null;
+  const receiptUrl = useMemo(() => {
+    if (location.state?.receiptUrl) {
+      return location.state.receiptUrl;
+    }
+    return buildReceiptUrl(orderId, {
+      ...receiptPayload,
+      total: location.state?.total,
+      buyer: receiptPayload?.buyer || `${user?.first_name || ""} ${user?.last_name || ""}`.trim(),
+      email: receiptPayload?.email || user?.email || "",
+      items: receiptPayload?.items || order?.items || [],
+    });
+  }, [location.state, orderId, receiptPayload, user, order]);
+
+  const qrCodeUrl = receiptUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(receiptUrl)}`
+    : "";
 
   useEffect(() => {
     if (!user) {
@@ -63,6 +98,76 @@ export default function OrderConfirmation_new() {
           <p style={{ color: "#666", fontSize: "1.1rem" }}>
             Merci pour votre achat. Votre commande a été reçue avec succès.
           </p>
+        </div>
+
+        {/* Reçu PDF + QR */}
+        <div style={{
+          background: "white",
+          padding: "1.5rem",
+          borderRadius: "8px",
+          border: "1px solid #e0e0e0",
+          marginBottom: "2rem"
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: "1rem", color: "#333" }}>Reçu PDF</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: "1.5rem", alignItems: "center" }}>
+            <div style={{ textAlign: "center" }}>
+              {qrCodeUrl ? (
+                <img
+                  src={qrCodeUrl}
+                  alt="QR code vers le reçu PDF"
+                  style={{ width: "220px", height: "220px", objectFit: "contain", border: "1px solid #eee", borderRadius: "12px" }}
+                />
+              ) : (
+                <div style={{ width: "220px", height: "220px", border: "1px dashed #ccc", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", color: "#666" }}>
+                  QR indisponible
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p style={{ marginTop: 0, color: "#666", lineHeight: 1.6 }}>
+                Scanne ce QR code pour ouvrir le reçu de ton achat en PDF. Le lien reste compatible avec les paiements locaux et internationaux.
+              </p>
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <a
+                  href={receiptUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0.85rem 1.1rem",
+                    background: "#007bff",
+                    color: "white",
+                    textDecoration: "none",
+                    borderRadius: "6px",
+                    fontWeight: 700
+                  }}
+                >
+                  Ouvrir le reçu PDF
+                </a>
+                <a
+                  href={receiptUrl}
+                  download
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0.85rem 1.1rem",
+                    background: "#f8fafc",
+                    color: "#1b3a6b",
+                    textDecoration: "none",
+                    borderRadius: "6px",
+                    border: "1px solid #d0d7de",
+                    fontWeight: 700
+                  }}
+                >
+                  Télécharger
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Numéro de commande */}

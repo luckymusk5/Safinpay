@@ -6,17 +6,6 @@ import { SearchContext } from "../context/SearchContext";
 
 const NAVY = "#1b3a6b";
 
-const NAV_LINKS = [
-  { label: "Accueil", to: "/" },
-  { label: "Catégories", to: "/categories" },           // ← Ajouté
-  { label: "Produits", to: "/search" },
-  { label: "Fournisseurs", to: "/search" },
-  { label: "Boutique Vendeur", to: "/seller/1" },      // ← Ajouté (SellerStore)
-  { label: "Commandes", to: "/orders" },
-  { label: "Messages", to: "/account" },
-  { label: "Aide", to: "/account" },
-];
-
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth);
   useEffect(() => {
@@ -36,6 +25,24 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const w = useWindowWidth();
   const isMobile = w < 768;
+  const navLinks = user?.is_seller
+    ? [
+        { label: "Accueil", to: "/" },
+        { label: "Catégories", to: "/categories" },
+        { label: "Dashboard vendeur", to: "/seller/dashboard" },
+        { label: "Boutiques", to: "/boutiques" },
+        { label: "Commandes", to: "/orders" },
+        { label: "Messages", to: "/account" },
+        { label: "Aide", to: "/account" },
+      ]
+    : [
+        { label: "Accueil", to: "/" },
+        { label: "Catégories", to: "/categories" },
+        { label: "Boutiques vendeurs", to: "/boutiques" },
+        { label: "Commandes", to: "/orders" },
+        { label: "Messages", to: "/account" },
+        { label: "Aide", to: "/account" },
+      ];
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -101,7 +108,7 @@ export default function Navbar() {
           <form onSubmit={handleSearch} style={{ flex: 1, display: "flex", maxWidth: "680px" }}>
             <input
               type="text"
-              placeholder="Rechercher des produits, fournisseurs..."
+              placeholder="Rechercher des produits..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -156,6 +163,17 @@ export default function Navbar() {
               onMouseLeave={e => e.currentTarget.style.color = "#444"}
             >Favoris</Link>
 
+            {!user?.is_seller && (
+              <Link to="/boutiques" style={{ color: "#444", textDecoration: "none", fontSize: "0.9rem", fontWeight: "500" }}
+                onMouseEnter={e => e.currentTarget.style.color = NAVY}
+                onMouseLeave={e => e.currentTarget.style.color = "#444"}
+              >Boutiques</Link>
+            )}
+
+            {user?.is_seller && (
+              <Link to="/boutiques" style={{ color: NAVY, textDecoration: "none", fontSize: "0.9rem", fontWeight: "700" }}>Boutiques</Link>
+            )}
+
             <Link to="/cart" style={{ color: "#444", textDecoration: "none", fontSize: "0.9rem", fontWeight: "500", position: "relative" }}
               onMouseEnter={e => e.currentTarget.style.color = NAVY}
               onMouseLeave={e => e.currentTarget.style.color = "#444"}
@@ -175,7 +193,7 @@ export default function Navbar() {
             </Link>
 
             {user?.is_seller && (
-              <Link to="/seller/dashboard" style={{ color: NAVY, textDecoration: "none", fontSize: "0.9rem", fontWeight: "700" }}>Vendre</Link>
+              <Link to="/seller/dashboard" style={{ color: NAVY, textDecoration: "none", fontSize: "0.9rem", fontWeight: "700" }}>Dashboard vendeur</Link>
             )}
           </div>
         )}
@@ -205,7 +223,7 @@ export default function Navbar() {
       {!isMobile && (
         <div style={{ borderTop: "1px solid #f0f0f0" }}>
           <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 1.5rem", display: "flex", overflowX: "auto" }}>
-            {NAV_LINKS.map(({ label, to }) => (
+            {navLinks.map(({ label, to }) => (
               <Link 
                 key={label} 
                 to={to} 
@@ -266,7 +284,7 @@ export default function Navbar() {
           </form>
 
           {/* Nav links */}
-          {NAV_LINKS.map(({ label, to }) => (
+          {navLinks.map(({ label, to }) => (
             <Link 
               key={label} 
               to={to} 
@@ -312,10 +330,20 @@ export default function Navbar() {
             <Link to="/account" onClick={closeMenu} style={{
               color: "#444", textDecoration: "none", fontSize: "0.88rem", padding: "0.4rem 0"
             }}>Favoris</Link>
+            {!user?.is_seller && (
+              <Link to="/boutiques" onClick={closeMenu} style={{
+                color: "#444", textDecoration: "none", fontSize: "0.88rem", padding: "0.4rem 0"
+              }}>Boutiques</Link>
+            )}
             {user?.is_seller && (
               <Link to="/seller/dashboard" onClick={closeMenu} style={{
                 color: NAVY, textDecoration: "none", fontSize: "0.88rem", fontWeight: "700", padding: "0.4rem 0"
-              }}>Vendre</Link>
+              }}>Dashboard vendeur</Link>
+            )}
+            {user?.is_seller && (
+              <Link to="/seller/store" onClick={closeMenu} style={{
+                color: NAVY, textDecoration: "none", fontSize: "0.88rem", fontWeight: "700", padding: "0.4rem 0"
+              }}>Ma boutique</Link>
             )}
           </div>
         </div>

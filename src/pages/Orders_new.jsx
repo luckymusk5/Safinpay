@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useCallback } from "react";
 import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 
@@ -10,24 +10,42 @@ export default function Orders_new() {
   const [activeTab, setActiveTab] = useState("all");
 
   const statuses = {
-    pending: { label: "En attente", color: "#ff9900" },
-    processing: { label: "En traitement", color: "#0066c0" },
-    shipped: { label: "Expédié", color: "#146eb4" },
-    delivered: { label: "Livré", color: "#28a745" },
-    cancelled: { label: "Annulé", color: "#dc3545" }
+    pending: { label: "En attente", color: "#ff9900", icon: "⏳" },
+    processing: { label: "En traitement", color: "#0066c0", icon: "⚙️" },
+    shipped: { label: "Expédié", color: "#146eb4", icon: "🚚" },
+    delivered: { label: "Livré", color: "#28a745", icon: "✅" },
+    cancelled: { label: "Annulé", color: "#dc3545", icon: "✖" }
   };
 
-  useEffect(() => {
-    if (user) {
-      api.get("/orders/")
-        .then(res => {
-          const ordersList = Array.isArray(res.data) ? res.data : res.data.results || [];
-          setOrders(ordersList);
-        })
-        .catch(err => console.error(err))
-        .finally(() => setLoading(false));
+  const loadOrders = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const res = await api.get("/orders/");
+      const ordersList = Array.isArray(res.data) ? res.data : res.data.results || [];
+      setOrders(ordersList);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    loadOrders();
+
+    const interval = window.setInterval(() => {
+      loadOrders();
+    }, 15000);
+
+    const onFocus = () => loadOrders();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [loadOrders]);
 
   const filterOrders = () => {
     if (activeTab === "all") return orders;
@@ -141,7 +159,7 @@ export default function Orders_new() {
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <p style={{ fontWeight: "600", fontSize: "1.1rem" }}>
-                        {order.total_price.toLocaleString()} FCFA
+                        {(order.total_price || 0).toLocaleString()} FCFA
                       </p>
                       <button className="btn btn-secondary btn-small">
                         Détails
@@ -174,7 +192,7 @@ export default function Orders_new() {
                         </div>
                         <div style={{ textAlign: "right" }}>
                           <p style={{ fontWeight: "600" }}>
-                            {item.price.toLocaleString()} FCFA
+                            {(item.price || 0).toLocaleString()} FCFA
                           </p>
                         </div>
                       </div>

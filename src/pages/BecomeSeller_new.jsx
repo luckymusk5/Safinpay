@@ -38,18 +38,19 @@ export default function BecomeSeller_new() {
       
       if (res.status === 201) {
         console.log("Réponse complète du backend:", JSON.stringify(res.data, null, 2));
-        
-        // Récupérer le seller_id depuis la réponse (peut être "id", "seller_id", etc)
-        const sellerId = res.data.id || res.data.seller_id || res.data.seller;
-        console.log("Seller ID extrait:", sellerId);
-        
-        // Mettre à jour l'utilisateur avec is_seller = true
-        const updatedUser = { 
-          ...user, 
-          is_seller: true, 
-          seller_id: sellerId
+        if (res.data?.access) {
+          localStorage.setItem("access_token", res.data.access);
+          localStorage.setItem("refresh_token", res.data.refresh || "");
+        }
+        const updatedUser = res.data?.user ? {
+          ...res.data.user,
+          is_seller: true,
+          role: "seller"
+        } : {
+          ...user,
+          is_seller: true,
+          role: "seller"
         };
-        console.log("User mis à jour:", updatedUser);
         login(updatedUser);
         setSuccess(true);
       }

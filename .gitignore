@@ -11,6 +11,38 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+
+# Backend séparé
+backendsafinpay/
+safinpaybackend/
+.env.local
+.env.production
+.env.development
+*.sqlite3
+*.db
+instance/
+uploads/
+media/
+
+# Rapports et caches de test
+.coverage
+coverage/
+htmlcov/
+
+# Artefacts Vite / build
+.vite/
+*.tsbuildinfo
+vite.config.*.timestamp*
+
+# Environnements Python et caches
+.venv/
+.v2nv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
 
 # Editor directories and files
 .vscode/*

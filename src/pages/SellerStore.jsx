@@ -1,77 +1,179 @@
-import { Link } from "react-router-dom";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import api from "../services/api";
 import ProductCard from "../components/ProductCard";
+import { AuthContext } from "../context/AuthContext";
 
-// --- CONSTANTES DE STYLE (Cohérence avec le reste du site) ---
 const SAFIN_BLUE = "#1b3a6b";
 const SAFIN_LIGHT_BG = "#f4f7f9";
 const WHITE = "#ffffff";
 const GOLD = "#c9a030";
 
-// --- DONNÉES SIMULÉES ---
-const seller = {
-  name: "TechStore Cameroun",
-  description: "Votre boutique de gadgets et accessoires tech de haute qualité.",
-  banner: "https://via.placeholder.com/1200x300",
-};
-
-const products = [
-  { id: 1, displayTitle: "Smartphone Samsung", price: 150000, images: ["https://via.placeholder.com/200"], _cat: "Électronique", _rating: 4.8, _sold: 120, _free: true, _prime: true },
-  { id: 2, displayTitle: "Casque Bluetooth", price: 25000, images: ["https://via.placeholder.com/200"], _cat: "Électronique", _rating: 4.5, _sold: 85, _free: false, _prime: true },
-  { id: 3, displayTitle: "Ordinateur Portable", price: 350000, images: ["https://via.placeholder.com/200"], _cat: "Électronique", _rating: 4.9, _sold: 45, _free: true, _prime: false },
-];
+function normalizeBoutique(boutique) {
+  return {
+    id: String(boutique?.idboutique || boutique?.id || boutique?.IDBOUTIQUE || ""),
+    vendorId: String(boutique?.idvendeur || boutique?.vendor_id || ""),
+    name: boutique?.nomboutique || boutique?.name || boutique?.shop_name || "Boutique sans nom",
+    description: boutique?.descriptionboutique || boutique?.description || "Aucune description disponible.",
+    address: boutique?.adresseboutique || boutique?.address || "Adresse non renseignée",
+    verified: Boolean(boutique?.mentionverifierboutique ?? boutique?.verified),
+    raw: boutique,
+  };
+}
 
 export default function SellerStore() {
+  const { boutiqueId, sellerId } = useParams();
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user;
+  const resolvedBoutiqueId = boutiqueId || sellerId || user?.seller_id || "";
+
+  const [boutique, setBoutique] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    const loadBoutique = async () => {
+      if (!resolvedBoutiqueId) {
+        if (active) {
+          setLoading(false);
+          setError(user?.is_seller ? "Votre boutique n'est pas encore disponible." : "Sélectionnez une boutique dans la liste.");
+        }
+        return;
+      }
+
+      try {
+        const res = await api.get(`/boutique/${resolvedBoutiqueId}`);
+        const boutiqueData = normalizeBoutique(res.data?.boutique || res.data || {});
+        const productList = Array.isArray(res.data?.produits) ? res.data.produits : [];
+        if (active) {
+          setBoutique(boutiqueData);
+          setProducts(productList);
+        }
+      } catch (err) {
+        console.error("Erreur chargement boutique:", err);
+        if (active) {
+          setError("Impossible de charger cette boutique pour le moment.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    setLoading(true);
+    setError("");
+    loadBoutique();
+
+    return () => {
+      active = false;
+    };
+  }, [resolvedBoutiqueId, user?.is_seller]);
+
+  const initials = useMemo(() => {
+    const source = boutique?.name || "B";
+    return source
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0].toUpperCase())
+      .join("");
+  }, [boutique?.name]);
+
   return (
-    /* Note : On ne met PAS <Navbar /> ou <Footer /> ici. 
-       Ils doivent être placés une seule fois dans App.jsx 
-    */
     <div style={{ background: SAFIN_LIGHT_BG, minHeight: "100vh", paddingBottom: "4rem" }}>
-      
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem", position: "relative" }}>
-        
-        {/* Banner Section */}
-        <div style={{ height: "250px", borderRadius: "12px", overflow: "hidden", position: "relative" }}>
-          <img src={seller.banner} alt="banner" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent, rgba(27,58,107,0.7))" }} />
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "2rem 1.5rem", position: "relative" }}>
+        <div style={{ marginBottom: "1rem" }}>
+          <Link to={user?.is_seller ? "/seller/dashboard" : "/boutiques"} style={{ color: SAFIN_BLUE, textDecoration: "none", fontWeight: 600 }}>
+            ← {user?.is_seller ? "Retour au dashboard" : "Retour aux boutiques"}
+          </Link>
         </div>
 
-        {/* Profile Card (L'élément qui chevauche la bannière) */}
-        <div style={{ 
-          background: WHITE, borderRadius: "15px", padding: "2rem", 
-          marginTop: "-50px", position: "relative", boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem" 
-        }}>
-          <div>
-            <h1 style={{ color: SAFIN_BLUE, fontSize: "2rem", fontWeight: "800", margin: "0 0 0.5rem" }}>{seller.name}</h1>
-            <p style={{ color: "#666", margin: 0 }}>{seller.description}</p>
+        {loading ? (
+          <div style={{ padding: "4rem 1rem", textAlign: "center", color: "#666" }}>Chargement de la boutique...</div>
+        ) : error ? (
+          <div style={{ background: "#fff4f4", color: "#9b1c1c", border: "1px solid #f2c7c7", borderRadius: "12px", padding: "1.25rem" }}>
+            {error}
           </div>
-          <button style={{ 
-            background: SAFIN_BLUE, color: WHITE, padding: "0.8rem 2rem", borderRadius: "8px", 
-            border: "none", fontWeight: "700", cursor: "pointer", transition: "0.3s"
-          }}
-          onMouseEnter={(e) => e.target.style.opacity = "0.9"}
-          onMouseLeave={(e) => e.target.style.opacity = "1"}
-          >
-            Suivre la boutique
-          </button>
-        </div>
+        ) : boutique ? (
+          <>
+            <div style={{ height: "260px", borderRadius: "18px", overflow: "hidden", position: "relative", boxShadow: "0 12px 32px rgba(0,0,0,0.12)" }}>
+              <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${SAFIN_BLUE} 0%, #294d84 55%, ${GOLD} 100%)` }} />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.35))" }} />
+              <div style={{ position: "absolute", left: "1.5rem", bottom: "1.5rem", color: "white" }}>
+                <div style={{
+                  width: "68px",
+                  height: "68px",
+                  borderRadius: "20px",
+                  background: "rgba(255,255,255,0.16)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.55rem",
+                  fontWeight: 800,
+                  marginBottom: "0.9rem"
+                }}>
+                  {initials || "B"}
+                </div>
+                <h1 style={{ margin: 0, fontSize: "2.2rem", lineHeight: 1.1 }}>{boutique.name}</h1>
+                <p style={{ margin: "0.45rem 0 0", maxWidth: "760px", color: "rgba(255,255,255,0.92)", lineHeight: 1.6 }}>
+                  {boutique.description}
+                </p>
+              </div>
+            </div>
 
-        {/* Titre de section */}
-        <h2 style={{ color: SAFIN_BLUE, marginTop: "3rem", marginBottom: "1.5rem", fontSize: "1.5rem" }}>
-          Produits en <span style={{ color: GOLD }}>Vedette</span>
-        </h2>
+            <div style={{
+              background: WHITE,
+              borderRadius: "16px",
+              padding: "1.25rem 1.5rem",
+              marginTop: "-32px",
+              position: "relative",
+              zIndex: 2,
+              boxShadow: "0 12px 28px rgba(17,24,39,0.08)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "1rem",
+              flexWrap: "wrap"
+            }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+                  <h2 style={{ margin: 0, color: SAFIN_BLUE, fontSize: "1.4rem" }}>Présentation de la boutique</h2>
+                  {boutique.verified && (
+                    <span style={{ background: "#edf7ed", color: "#26734d", borderRadius: "999px", padding: "0.25rem 0.7rem", fontSize: "0.8rem", fontWeight: 700 }}>
+                      Vérifiée
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: "0.45rem 0 0", color: "#666" }}>{boutique.address}</p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ margin: 0, color: SAFIN_BLUE, fontWeight: 800, fontSize: "1.2rem" }}>{products.length}</p>
+                <p style={{ margin: 0, color: "#666", fontSize: "0.9rem" }}>produit{products.length > 1 ? "s" : ""}</p>
+              </div>
+            </div>
 
-        {/* Grille de produits */}
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", 
-          gap: "1.5rem" 
-        }}>
-          {products.map((product, idx) => (
-            <ProductCard key={product.id} product={product} idx={idx} />
-          ))}
-        </div>
+            <h2 style={{ color: SAFIN_BLUE, marginTop: "2.5rem", marginBottom: "1.25rem", fontSize: "1.45rem" }}>
+              Produits en <span style={{ color: GOLD }}>vente</span>
+            </h2>
 
+            {products.length === 0 ? (
+              <div style={{ background: WHITE, borderRadius: "14px", padding: "2rem", textAlign: "center", color: "#666" }}>
+                Aucun produit publié pour cette boutique.
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "1.5rem" }}>
+                {products.map((product, idx) => (
+                  <ProductCard key={product.id || idx} product={product} idx={idx} />
+                ))}
+              </div>
+            )}
+          </>
+        ) : null}
       </div>
     </div>
   );

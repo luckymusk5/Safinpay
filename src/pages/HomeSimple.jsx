@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { SearchContext } from "../context/SearchContext";
+import api from "../services/api";
 
 function useWindowWidth() {
   const [w, setW] = useState(window.innerWidth);
@@ -16,7 +17,6 @@ const NAVY  = "#1b3a6b";
 const GOLD  = "#c9a030";
 const WHITE = "#ffffff";
 
-const CATEGORIES  = ["Électronique", "Vêtements", "Livres", "Maison", "Sports"];
 const PRICE_RANGES = [
   { label: "0 – 10 000 FCFA",       value: "0-10000"       },
   { label: "10 000 – 50 000 FCFA",  value: "10000-50000"   },
@@ -39,7 +39,7 @@ const BATCH_SIZE  = 100; // produits scannés par tick (libère le thread entre 
 
 // Test de correspondance filtres — aucune allocation, appelé dans le scan
 function matchesFilters(p, searchQ, catFilter, priceFilter, freeF, primeF, ratingF) {
-  if (searchQ && !p.titleQ.includes(searchQ) && !p.descQ.includes(searchQ)) return false;
+  if (searchQ && !p.titleQ.includes(searchQ) && !p.descQ.includes(searchQ) && !p.catQ.includes(searchQ)) return false;
   if (catFilter && p._cat !== catFilter) return false;
   if (priceFilter) {
     const px = p.price;
@@ -192,42 +192,95 @@ export default function HomeSimple() {
   const [freeShipping,     setFreeShipping]     = useState(false);
   const [primeShipping,    setPrimeShipping]    = useState(false);
   const [selectedRating,   setSelectedRating]   = useState("");
+  const [categories, setCategories] = useState([]);
 
   // Chargement unique dans rawRef (pas de state = pas de re-render par item)
   useEffect(() => {
-    fetch("/products.json")
-      .then(res => { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+    api.get("/products/")
+      .then(res => res.data)
       .then(data => {
-        rawRef.current = (Array.isArray(data) ? data : []).map((p, i) => ({
-          id:           p.id || ("json_" + i),
-          displayTitle: p.title || p.name || "Produit sans titre",
-          titleQ:       (p.title || p.name || "").toLowerCase(),
-          descQ:        (p.description || "").toLowerCase(),
-          price:        p.price || 0,
-          images:       p.images || [],
-          _cat:         detectCategory(p.title, p.description),
-          _rating:      parseFloat((Math.random() * 1.4 + 3.6).toFixed(1)),
-          _sold:        Math.floor(Math.random() * 450) + 50,
-          _free:        Math.random() > 0.5,
-          _prime:       Math.random() > 0.3,
-        }));
+        const normalized = (Array.isArray(data) ? data : []).map((p, i) => {
+          const detectedCategory = p.category || p.category_name || detectCategory(p.title, p.description);
+          return {
+            id:           p.id || ("neon_" + i),
+            displayTitle: p.title || p.name || "Produit sans titre",
+            titleQ:       (p.title || p.name || "").toLowerCase(),
+            descQ:        (p.description || "").toLowerCase(),
+            price:        p.price || 0,
+            images:       p.images || (p.image ? [p.image] : []),
+            _cat:         detectedCategory,
+            catQ:         detectedCategory.toLowerCase(),
+            _rating:      parseFloat((Math.random() * 1.4 + 3.6).toFixed(1)),
+            _sold:        Math.floor(Math.random() * 450) + 50,
+            _free:        Math.random() > 0.5,
+            _prime:       Math.random() > 0.3,
+          };
+        });
+
+        rawRef.current = normalized;
+        setCategories([...new Set(normalized.map(item => item._cat).filter(Boolean))]);
       })
-      .catch(err => setError(err.message))
+        .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  const hasRemoteFilters = searchTerm.trim() || selectedCategory || selectedPrice;
 
   // Scan progressif par batches — annulable par ID
   const runScan = useCallback(() => {
     const myId = ++scanIdRef.current;
-    const raw  = rawRef.current;
-    if (!raw.length) return;
-
     const searchQ     = searchTerm.trim().toLowerCase();
     const catFilter   = selectedCategory;
     const priceFilter = selectedPrice;
     const freeF       = freeShipping;
     const primeF      = primeShipping;
     const ratingF     = selectedRating ? parseInt(selectedRating) : 0;
+
+    if (hasRemoteFilters) {
+      setScanning(true);
+      setDisplayed([]);
+      setTotalFound(0);
+
+      api.get("/products/search/", {
+        params: {
+          q: searchTerm.trim(),
+          category: selectedCategory,
+          priceRange: selectedPrice,
+          limit: MAX_DISPLAY,
+          mode: "fast",
+        }
+      })
+        .then(res => {
+          if (scanIdRef.current !== myId) return;
+          const rows = Array.isArray(res.data) ? res.data : [];
+          const normalized = rows.map((p, i) => ({
+            id:           p.id || (`remote_${i}`),
+            displayTitle: p.title || p.name || "Produit sans titre",
+            titleQ:       (p.title || p.name || "").toLowerCase(),
+            descQ:        (p.description || "").toLowerCase(),
+            catQ:         (p.category || p.category_name || "").toLowerCase(),
+            price:        p.price || 0,
+            images:       p.images || (p.image ? [p.image] : []),
+            _cat:         p.category || p.category_name || detectCategory(p.title, p.description),
+            _rating:      parseFloat((Math.random() * 1.4 + 3.6).toFixed(1)),
+            _sold:        Math.floor(Math.random() * 450) + 50,
+            _free:        Math.random() > 0.5,
+            _prime:       Math.random() > 0.3,
+          })).filter(item => matchesFilters(item, searchQ, catFilter, priceFilter, freeF, primeF, ratingF));
+
+          setDisplayed(normalized.slice(0, MAX_DISPLAY));
+          setTotalFound(normalized.length);
+        })
+        .catch(err => setError(err.message))
+        .finally(() => {
+          if (scanIdRef.current === myId) setScanning(false);
+        });
+
+      return;
+    }
+
+    const raw  = rawRef.current;
+    if (!raw.length) return;
 
     setScanning(true);
     setDisplayed([]);
@@ -264,7 +317,7 @@ export default function HomeSimple() {
     };
 
     setTimeout(step, 0);
-  }, [searchTerm, selectedCategory, selectedPrice, freeShipping, primeShipping, selectedRating]);
+  }, [searchTerm, selectedCategory, selectedPrice, freeShipping, primeShipping, selectedRating, hasRemoteFilters]);
 
   // Relance le scan dès que le chargement est fini ou qu'un filtre change
   useEffect(() => {
@@ -394,7 +447,7 @@ export default function HomeSimple() {
           <FilterSection title="Catégories">
             <RadioItem name="cat" value="" label="Toutes" checked={selectedCategory === ""}
               onChange={() => setSelectedCategory("")} />
-            {CATEGORIES.map(cat => (
+            {categories.map(cat => (
               <RadioItem key={cat} name="cat" value={cat} label={cat} checked={selectedCategory === cat}
                 onChange={() => setSelectedCategory(cat)} />
             ))}

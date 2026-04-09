@@ -4,14 +4,18 @@ import api from "../services/api";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 
+const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_ORIGIN || "https://safinpaybackend-production.up.railway.app";
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [addedMessage, setAddedMessage] = useState("");
 
   const cartContext = useContext(CartContext);
   const { addToCart } = cartContext || { addToCart: () => {} };
@@ -22,38 +26,31 @@ export default function ProductDetail() {
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        if (id && id.startsWith("json_")) {
-          // Produit venant de products.json
-          const index = parseInt(id.replace("json_", ""), 10);
-          const res = await fetch("/products.json");
-          const data = await res.json();
-          const jsonProduct = Array.isArray(data) ? data[index] : null;
-          if (!jsonProduct) throw new Error("Produit introuvable dans le JSON");
-          // Normaliser pour correspondre au format attendu
-          setProduct({
-            id: id,
-            name: jsonProduct.title,
-            title: jsonProduct.title,
-            price: jsonProduct.price,
-            description: jsonProduct.description,
-            image: jsonProduct.images && jsonProduct.images.length > 0 ? jsonProduct.images[0] : null,
-            images: jsonProduct.images || [],
-            externalUrl: jsonProduct.url,
-            stock: 10,
-            seller_shop_name: "SafinPay",
-          });
-        } else {
-          const res = await api.get(`/products/${id}/`);
-          console.log("Données produit reçues:", res.data);
-          console.log("Image brute:", res.data.image);
-          setProduct(res.data);
-          // Charger les avis aussi
+        const res = await api.get(`/products/${id}/`);
+        console.log("Données produit reçues:", res.data);
+        console.log("Image brute:", res.data.image);
+        setProduct(res.data);
+        try {
+          const reviewRes = await api.get(`/reviews/?product_id=${id}`);
+          setReviews(reviewRes.data || []);
+        } catch (err) {
+          console.log("Pas d'avis trouvés");
+        }
+
+        const boutiqueId = res.data?.raw?.idboutique || res.data?.idboutique || res.data?.boutique_id;
+        if (boutiqueId) {
           try {
-            const reviewRes = await api.get(`/reviews/?product_id=${id}`);
-            setReviews(reviewRes.data || []);
-          } catch (err) {
-            console.log("Pas d'avis trouvés");
+            const boutiqueRes = await api.get(`/boutique/${boutiqueId}`);
+            const boutiqueProducts = Array.isArray(boutiqueRes.data?.produits) ? boutiqueRes.data.produits : [];
+            setRelatedProducts(
+              boutiqueProducts.filter((item) => String(item?.id) !== String(id)).slice(0, 8)
+            );
+          } catch (relatedErr) {
+            console.error("Erreur chargement produits de la même boutique:", relatedErr);
+            setRelatedProducts([]);
           }
+        } else {
+          setRelatedProducts([]);
         }
       } catch (err) {
         console.error("Erreur au chargement du produit:", err);
@@ -73,8 +70,13 @@ export default function ProductDetail() {
     if (!product) return;
     
     setIsAdding(true);
+    setAddedMessage("");
     try {
-      addToCart(product, quantity);
+      const result = await addToCart(product, quantity);
+      if (result) {
+        setAddedMessage("Ajouté au panier");
+        setTimeout(() => setAddedMessage(""), 1800);
+      }
       setQuantity(1);
     } catch (err) {
       console.error("Erreur:", err);
@@ -89,7 +91,7 @@ export default function ProductDetail() {
   // Construire l'URL complète de l'image
   let imageUrl = product.image;
   if (imageUrl && !imageUrl.startsWith('http')) {
-    imageUrl = `http://127.0.0.1:8000${imageUrl}`;
+    imageUrl = `${BACKEND_ORIGIN}${imageUrl}`;
   }
   if (!imageUrl) {
     imageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Crect fill='%23f0f0f0' width='500' height='500'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='24'%3E📦 Pas de photo%3C/text%3E%3C/svg%3E";
@@ -259,6 +261,12 @@ export default function ProductDetail() {
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
             <div>
+
+            {addedMessage && (
+              <div style={{ marginBottom: "1rem", color: "#28a745", fontWeight: "700" }}>
+                {addedMessage}
+              </div>
+            )}
               <h3 style={{ fontWeight: "600", marginBottom: "0.75rem", color: "#0f1111" }}>Caractéristiques :</h3>
               <ul style={{ paddingLeft: "1.5rem", color: "#555", lineHeight: "2" }}>
                 <li>✓ Qualité premium garantie</li>
@@ -302,6 +310,41 @@ export default function ProductDetail() {
           ) : (
             <div style={{ textAlign: "center", padding: "2rem", color: "#666" }}>
               <p>Aucun avis pour le moment. Soyez le premier à laisser un avis!</p>
+            </div>
+          )}
+        </div>
+
+        <div style={{ backgroundColor: "white", borderRadius: "8px", padding: "2rem", marginTop: "2rem" }}>
+          <h2 style={{ fontSize: "1.3rem", fontWeight: "700", marginBottom: "1rem", borderBottom: "2px solid #d9534f", paddingBottom: "0.75rem" }}>
+            Plus de produits de cette boutique
+          </h2>
+          {relatedProducts.length > 0 ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+              {relatedProducts.map((related) => (
+                <Link
+                  key={related.id}
+                  to={`/product/${related.id}`}
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  <div style={{ border: "1px solid #e7e7e7", borderRadius: "8px", overflow: "hidden", backgroundColor: "#fff" }}>
+                    <div style={{ height: "140px", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <img
+                        src={related.image || product.image}
+                        alt={related.name}
+                        style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }}
+                      />
+                    </div>
+                    <div style={{ padding: "0.85rem" }}>
+                      <div style={{ fontWeight: 600, color: "#0f1111", marginBottom: "0.35rem" }}>{related.name}</div>
+                      <div style={{ color: "#d9534f", fontWeight: 700 }}>{(parseFloat(related.price) || 0).toLocaleString()} FCFA</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", color: "#666", padding: "1rem 0" }}>
+              Aucun autre produit proposé par cette boutique pour le moment.
             </div>
           )}
         </div>

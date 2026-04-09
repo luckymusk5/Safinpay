@@ -18,12 +18,13 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = localStorage.getItem("access_token");
         if (token) {
-          const res = await api.get("/users/me/");
-          setUser(res.data);
+          const res = await api.get("/auth/me/");
+          setUser(res.data?.user || res.data || null);
         }
       } catch (err) {
         console.error("Erreur lors du chargement de l'utilisateur:", err);
         localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
         setUser(null);
       } finally {
         setLoading(false);
@@ -38,9 +39,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Déconnexion
-  const logout = () => {
-    localStorage.removeItem("access_token");
-    setUser(null);
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout/");
+    } catch (err) {
+      console.error("Erreur lors de la déconnexion:", err);
+    } finally {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      setUser(null);
+    }
   };
 
   return (

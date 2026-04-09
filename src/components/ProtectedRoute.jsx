@@ -16,7 +16,7 @@ export function ProtectedRoute({ children, requireAuth = true, requireSeller = f
   }
 
   // Route protégée nécessitant statut vendeur
-  if (requireSeller && user && !user.is_seller) {
+  if (requireSeller && user && !(user.is_seller || user.role === "seller")) {
     return <Navigate to="/become-seller" />;
   }
 

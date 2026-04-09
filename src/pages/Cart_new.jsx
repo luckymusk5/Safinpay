@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,17 +12,8 @@ export default function Cart() {
     clearCart: () => {}
   };
 
-  const [forceUpdate, setForceUpdate] = useState(0);
   const authContext = useContext(AuthContext);
   const { user } = authContext || { user: null };
-
-  // Actualiser les calculs toutes les secondes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setForceUpdate(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Calculs du total
   const subtotal = Math.round(

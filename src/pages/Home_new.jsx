@@ -1,23 +1,26 @@
 import { useEffect, useState } from "react";
+import api from "../services/api";
 import ProductCardSimple from "../components/ProductCardSimple";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ category: "", priceRange: "" });
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    // Charger le fichier JSON depuis le serveur
-    fetch("/products.json")
-      .then(res => res.json())
+    api.get("/products/")
+      .then(res => res.data)
       .then(data => {
         let productsList = Array.isArray(data) ? data : [];
         // Ajouter un ID unique basé sur l'index si absent
         productsList = productsList.map((product, index) => ({
           ...product,
-          id: product.id || `json_${index}`,
+          id: product.id || `neon_${index}`,
+          category: product.category || product.category_name || "Maison",
         }));
         setProducts(productsList);
+        setCategories([...new Set(productsList.map(item => item.category).filter(Boolean))]);
         console.log(`Chargé ${productsList.length} produits`);
       })
       .catch(err => {
@@ -28,7 +31,6 @@ export default function Home() {
       });
   }, []);
 
-  const categories = ["Électronique", "Vêtements", "Livres", "Maison", "Sports"];
   const priceRanges = [
     { label: "0 - 50,000 FCFA", value: "0-50000" },
     { label: "50,000 - 100,000 FCFA", value: "50000-100000" },

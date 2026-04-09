@@ -14,7 +14,7 @@ export default function Search_new() {
   useEffect(() => {
     if (query.trim()) {
       setLoading(true);
-      api.get("/products/search/", { params: { q: query } })
+      api.get("/products/search/", { params: { q: query, limit: 20, mode: "fast" } })
         .then(res => {
           const resultsList = Array.isArray(res.data) ? res.data : res.data.results || [];
           setResults(resultsList);
