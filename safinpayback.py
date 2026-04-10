@@ -17,7 +17,7 @@ CORS(app)
 
 DATABASE_URL = os.getenv('DATABASE_URL', '')
 MAX_CACHED_PRODUCTS = 20
-BACKEND_PUBLIC_URL = os.getenv('BACKEND_PUBLIC_URL', 'http://127.0.0.1:8000').rstrip('/')
+BACKEND_PUBLIC_URL = os.getenv('BACKEND_PUBLIC_URL', 'https://safinpaybackend-production.up.railway.app').rstrip('/')
 ACCESS_TOKEN_TTL_HOURS = 24
 REFRESH_TOKEN_TTL_DAYS = 30
 CACHE_LOCK = Lock()
@@ -670,18 +670,25 @@ def _authenticate_user(identifier, password, role):
     return user_row
 
 
-def _fetch_products_raw():
-    return _fetch_all(
-        '''SELECT
-               p.*,
-               b.nomboutique AS boutique_nomboutique,
-               b.idvendeur AS boutique_idvendeur
-           FROM produit p
-           LEFT JOIN boutique b ON b.idboutique = p.idboutique
-           ORDER BY p.idproduit
-           LIMIT %s''',
-        (MAX_CACHED_PRODUCTS,)
-    )
+def _fetch_products_raw(limit=None):
+    sql = '''SELECT
+                 p.idproduit,
+                 p.idboutique,
+                 p.nomproduit,
+                 p.descriptionproduit,
+                 p.quantiteminproduit,
+                 p.quantitestockproduit,
+                 p.prixproduit,
+                 p.date_heureajoutproduit,
+                 b.nomboutique AS boutique_nomboutique,
+                 b.idvendeur AS boutique_idvendeur
+             FROM produit p
+             LEFT JOIN boutique b ON b.idboutique = p.idboutique
+             ORDER BY p.idproduit'''
+    if limit is not None:
+        sql += ' LIMIT %s'
+        return _fetch_all(sql, (limit,))
+    return _fetch_all(sql)
 
 
 def _fetch_boutiques_raw():
@@ -901,8 +908,42 @@ def get_products_payload():
     if APP_CACHE['ready']:
         return APP_CACHE['products']
 
-    products = _fetch_products_raw()
+    products = _fetch_products_raw(MAX_CACHED_PRODUCTS)
     return [_normalize_product(product) for product in products]
+
+
+def _search_products_from_cache(query_text='', category='', price_range='', limit=None):
+    normalized_query = _normalize_search_text(query_text)
+    normalized_category = _normalize_search_text(category)
+    requested_limit = int(limit) if limit is not None else None
+    results = []
+
+    for product in APP_CACHE['products']:
+        if normalized_category and _normalize_search_text(product.get('category', '')) != normalized_category:
+            continue
+        if price_range and not _matches_price_range(product.get('price', 0), price_range):
+            continue
+
+        if normalized_query:
+            search_text = product.get('search_text') or _normalize_search_text(
+                f"{product.get('title', '')} {product.get('description', '')} {product.get('seller_shop_name', '')} {product.get('category', '')}"
+            )
+            if normalized_query not in search_text:
+                continue
+            score = 2
+            if search_text.startswith(normalized_query):
+                score = 0
+            elif normalized_query in (product.get('title', '') or '').lower():
+                score = 1
+            results.append((score, product))
+        else:
+            results.append((0, product))
+
+    results.sort(key=lambda item: (item[0], item[1].get('name', '')))
+    payload = [item[1] for item in results]
+    if requested_limit is not None:
+        return payload[:requested_limit]
+    return payload
 
 
 def _price_range_bounds(price_range):
@@ -986,7 +1027,14 @@ def _build_search_filters(query_text='', category='', price_range='', strategy='
 
 def _search_products_with_strategy(query_text='', category='', price_range='', limit=None, strategy='contains'):
     sql = '''SELECT
-                 p.*,
+                 p.idproduit,
+                 p.idboutique,
+                 p.nomproduit,
+                 p.descriptionproduit,
+                 p.quantiteminproduit,
+                 p.quantitestockproduit,
+                 p.prixproduit,
+                 p.date_heureajoutproduit,
                  b.nomboutique AS boutique_nomboutique,
                  b.idvendeur AS boutique_idvendeur
              FROM produit p
@@ -1015,7 +1063,7 @@ def warm_cache():
         try:
             APP_CACHE['images_by_product_id'] = {}
             APP_CACHE['images_by_source'] = {}
-            products_raw = _fetch_products_raw()
+            products_raw = _fetch_products_raw(MAX_CACHED_PRODUCTS)
             products = [_normalize_product(product) for product in products_raw]
             unique_categories = []
             seen_categories = set()
@@ -1041,8 +1089,16 @@ def search_products_in_db(query_text="", category="", price_range="", limit=None
     normalized_query = _normalize_search_text(query_text)
     normalized_category = _normalize_search_text(category)
 
+    if APP_CACHE['ready'] and fast and not normalized_query and not normalized_category and not price_range:
+        return _search_products_from_cache(
+            query_text=normalized_query,
+            category=normalized_category,
+            price_range=price_range,
+            limit=limit,
+        )
+
     if normalized_query and fast:
-        strategies = ('exact', 'prefix', 'contains', 'fts')
+        strategies = ('fts', 'exact', 'prefix', 'contains')
         requested_limit = int(limit) if limit is not None else 1
         for strategy in strategies:
             results = _search_products_with_strategy(
@@ -1056,7 +1112,7 @@ def search_products_in_db(query_text="", category="", price_range="", limit=None
                 return results
         return []
 
-    effective_limit = int(limit) if limit is not None else (MAX_CACHED_PRODUCTS if normalized_query else None)
+    effective_limit = int(limit) if limit is not None else (MAX_CACHED_PRODUCTS if (normalized_query or normalized_category or price_range) else MAX_CACHED_PRODUCTS)
     return _search_products_with_strategy(
         query_text=normalized_query,
         category=normalized_category,

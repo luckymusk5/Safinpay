@@ -3,11 +3,14 @@ import { Link, useParams } from "react-router-dom";
 import api from "../services/api";
 import ProductCard from "../components/ProductCard";
 import { AuthContext } from "../context/AuthContext";
+import AsyncProductImage from "../components/AsyncProductImage";
+import { getBoutiqueLogo } from "../utils/boutiqueBranding";
 
 const SAFIN_BLUE = "#1b3a6b";
 const SAFIN_LIGHT_BG = "#f4f7f9";
 const WHITE = "#ffffff";
 const GOLD = "#c9a030";
+const PROMO_IMAGE = "https://tse1.mm.bing.net/th/id/OIP.N40sCCyNUETLuvBUWqq5RQHaFP?rs=1&pid=ImgDetMain&o=7&rm=3";
 
 function normalizeBoutique(boutique) {
   return {
@@ -17,6 +20,7 @@ function normalizeBoutique(boutique) {
     description: boutique?.descriptionboutique || boutique?.description || "Aucune description disponible.",
     address: boutique?.adresseboutique || boutique?.address || "Adresse non renseignée",
     verified: Boolean(boutique?.mentionverifierboutique ?? boutique?.verified),
+    logo: boutique?.logo || boutique?.image || boutique?.logoUrl || null,
     raw: boutique,
   };
 }
@@ -73,15 +77,7 @@ export default function SellerStore() {
     };
   }, [resolvedBoutiqueId, user?.is_seller]);
 
-  const initials = useMemo(() => {
-    const source = boutique?.name || "B";
-    return source
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0].toUpperCase())
-      .join("");
-  }, [boutique?.name]);
+  const boutiqueLogo = useMemo(() => boutique?.logo || getBoutiqueLogo(boutique), [boutique]);
 
   return (
     <div style={{ background: SAFIN_LIGHT_BG, minHeight: "100vh", paddingBottom: "4rem" }}>
@@ -105,19 +101,25 @@ export default function SellerStore() {
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.35))" }} />
               <div style={{ position: "absolute", left: "1.5rem", bottom: "1.5rem", color: "white" }}>
                 <div style={{
-                  width: "68px",
-                  height: "68px",
-                  borderRadius: "20px",
+                  width: "84px",
+                  height: "84px",
+                  borderRadius: "22px",
                   background: "rgba(255,255,255,0.16)",
                   border: "1px solid rgba(255,255,255,0.2)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "1.55rem",
-                  fontWeight: 800,
+                  overflow: "hidden",
                   marginBottom: "0.9rem"
                 }}>
-                  {initials || "B"}
+                  <AsyncProductImage
+                    src={boutiqueLogo}
+                    alt={boutique?.name || "Boutique"}
+                    priority
+                    loading="eager"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    wrapperStyle={{ width: "100%", height: "100%" }}
+                  />
                 </div>
                 <h1 style={{ margin: 0, fontSize: "2.2rem", lineHeight: 1.1 }}>{boutique.name}</h1>
                 <p style={{ margin: "0.45rem 0 0", maxWidth: "760px", color: "rgba(255,255,255,0.92)", lineHeight: 1.6 }}>
@@ -142,6 +144,13 @@ export default function SellerStore() {
             }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+                  <img
+                    src={boutiqueLogo}
+                    alt={boutique?.name || "Boutique"}
+                    style={{ width: "34px", height: "34px", borderRadius: "10px", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)" }}
+                    loading="lazy"
+                    decoding="async"
+                  />
                   <h2 style={{ margin: 0, color: SAFIN_BLUE, fontSize: "1.4rem" }}>Présentation de la boutique</h2>
                   {boutique.verified && (
                     <span style={{ background: "#edf7ed", color: "#26734d", borderRadius: "999px", padding: "0.25rem 0.7rem", fontSize: "0.8rem", fontWeight: 700 }}>
@@ -154,6 +163,78 @@ export default function SellerStore() {
               <div style={{ textAlign: "right" }}>
                 <p style={{ margin: 0, color: SAFIN_BLUE, fontWeight: 800, fontSize: "1.2rem" }}>{products.length}</p>
                 <p style={{ margin: 0, color: "#666", fontSize: "0.9rem" }}>produit{products.length > 1 ? "s" : ""}</p>
+              </div>
+            </div>
+
+            <div style={{
+              marginTop: "1rem",
+              background: WHITE,
+              borderRadius: "14px",
+              border: "1px solid #e8edf3",
+              boxShadow: "0 10px 24px rgba(17,24,39,0.05)",
+              padding: "1rem 1.25rem",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "1rem",
+              flexWrap: "wrap"
+            }}>
+              <div>
+                <p style={{ margin: 0, color: SAFIN_BLUE, fontWeight: 800, fontSize: "0.9rem", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                  Boutique
+                </p>
+                <h3 style={{ margin: "0.25rem 0 0", color: "#111827", fontSize: "1.15rem" }}>{boutique.name}</h3>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ margin: 0, color: "#6b7280", fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                  ID boutique
+                </p>
+                <p style={{ margin: "0.2rem 0 0", color: SAFIN_BLUE, fontWeight: 800, fontSize: "1rem" }}>{boutique.id}</p>
+              </div>
+            </div>
+
+            <div style={{
+              marginTop: "1.25rem",
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1.35fr) minmax(0, 1fr)",
+              gap: "1rem"
+            }}>
+              <div style={{
+                background: WHITE,
+                borderRadius: "18px",
+                padding: "1rem",
+                boxShadow: "0 12px 28px rgba(17,24,39,0.06)",
+                border: "1px solid #e8edf3"
+              }}>
+                <AsyncProductImage
+                  src={PROMO_IMAGE}
+                  alt="Publicité boutique"
+                  loading="lazy"
+                  style={{ width: "100%", height: "260px", objectFit: "cover", borderRadius: "14px" }}
+                  wrapperStyle={{ width: "100%", height: "260px" }}
+                />
+              </div>
+              <div style={{
+                background: `linear-gradient(135deg, ${SAFIN_BLUE} 0%, #234c88 100%)`,
+                borderRadius: "18px",
+                padding: "1.25rem",
+                color: "white",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 12px 28px rgba(17,24,39,0.06)"
+              }}>
+                <div>
+                  <p style={{ margin: 0, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "0.75rem", opacity: 0.9 }}>Boutique mise en avant</p>
+                  <h3 style={{ margin: "0.45rem 0 0.8rem", fontSize: "1.45rem", lineHeight: 1.2 }}>Des visuels plus propres, plus clairs, plus vendables</h3>
+                  <p style={{ margin: 0, color: "rgba(255,255,255,0.9)", lineHeight: 1.6 }}>
+                    Les boutiques et les produits sont maintenant présentés avec plus d’espace, des images visibles et une hiérarchie plus nette.
+                  </p>
+                </div>
+                <div style={{ marginTop: "1rem", display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                  <span style={{ background: "rgba(255,255,255,0.16)", padding: "0.35rem 0.75rem", borderRadius: "999px", fontSize: "0.85rem", fontWeight: 700 }}>Image rapide</span>
+                  <span style={{ background: "rgba(255,255,255,0.16)", padding: "0.35rem 0.75rem", borderRadius: "999px", fontSize: "0.85rem", fontWeight: 700 }}>Theme SafinPay</span>
+                </div>
               </div>
             </div>
 

@@ -1,3 +1,5 @@
+import AsyncProductImage from "./AsyncProductImage";
+
 export default function ProductCardSimple({ product }) {
   // Récupérer le titre et les autres infos
   const title = product.title || product.name || "Produit sans titre";
@@ -29,18 +31,15 @@ export default function ProductCardSimple({ product }) {
         overflow: "hidden"
       }}>
         {imageUrl ? (
-          <img 
-            src={imageUrl} 
+          <AsyncProductImage
+            src={imageUrl}
             alt={title}
             style={{
               width: "100%",
               height: "100%",
               objectFit: "cover"
             }}
-            onError={(e) => {
-              e.target.style.display = "none";
-              e.target.parentElement.style.backgroundColor = "#eee";
-            }}
+            wrapperStyle={{ width: "100%", height: "100%" }}
           />
         ) : (
           <span style={{ color: "#999", fontSize: "12px" }}>No Image</span>

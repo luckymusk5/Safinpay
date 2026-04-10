@@ -2,6 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState, useContext } from "react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
+import AsyncProductImage from "./AsyncProductImage";
+import { getBoutiqueLogo } from "../utils/boutiqueBranding";
 
 const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_ORIGIN || "https://safinpaybackend-production.up.railway.app";
 
@@ -83,6 +85,8 @@ export default function ProductCard({ product }) {
   const divisor = (1 - remise / 100);
   const originalPrice = divisor > 0 ? Math.round(prix / divisor) : prix;
   const boutiqueLink = normalizedProduct.seller_id ? `/boutiques/${normalizedProduct.seller_id}` : null;
+  const boutiqueLogo = getBoutiqueLogo(normalizedProduct);
+  const boutiqueIdLabel = normalizedProduct.seller_id || normalizedProduct.boutique_id || normalizedProduct.raw?.idboutique || "N/A";
 
   // Gestion de l'image - peut être null ou une URL externe
   let finalImageUrl = normalizedProduct.image;
@@ -100,14 +104,12 @@ export default function ProductCard({ product }) {
       {/* Image - Cliquable */}
       <Link to={`/product/${normalizedProduct.id}`} style={{ textDecoration: "none" }}>
         <div className="product-image-container" style={{ cursor: "pointer" }}>
-          <img
+          <AsyncProductImage
             src={finalImageUrl}
             alt={normalizedProduct.name}
             className="product-image"
-            onError={(e) => {
-              console.error("Erreur chargement image:", finalImageUrl);
-              e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23eee' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='12'%3EImage non disponible%3C/text%3E%3C/svg%3E";
-            }}
+            style={{ objectFit: "cover" }}
+            wrapperStyle={{ width: "100%", height: "100%" }}
           />
           {remise > 0 && (
             <span style={{
@@ -174,10 +176,34 @@ export default function ProductCard({ product }) {
       <div style={{ marginTop: "0.75rem", fontSize: "0.85rem", color: "#666" }}>
         {boutiqueLink ? (
           <Link to={boutiqueLink} style={{ color: "#666", textDecoration: "none" }}>
-            <p style={{ margin: 0 }}>Vendu par: {normalizedProduct.seller_name}</p>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+              <img
+                src={boutiqueLogo}
+                alt={normalizedProduct.seller_name || "Boutique"}
+                style={{ width: "26px", height: "26px", objectFit: "cover", borderRadius: "50%", border: "1px solid rgba(0,0,0,0.08)" }}
+                loading="lazy"
+                decoding="async"
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.1rem" }}>
+                <p style={{ margin: 0, color: "#1f2937", fontWeight: 600 }}>Boutique: {normalizedProduct.seller_name}</p>
+                <p style={{ margin: 0, color: "#6b7280", fontSize: "0.78rem" }}>ID boutique: {boutiqueIdLabel}</p>
+              </div>
+            </div>
           </Link>
         ) : (
-          <p style={{ margin: 0 }}>Vendu par: {normalizedProduct.seller_name}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+            <img
+              src={boutiqueLogo}
+              alt={normalizedProduct.seller_name || "Boutique"}
+              style={{ width: "26px", height: "26px", objectFit: "cover", borderRadius: "50%", border: "1px solid rgba(0,0,0,0.08)" }}
+              loading="lazy"
+              decoding="async"
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.1rem" }}>
+              <p style={{ margin: 0, color: "#1f2937", fontWeight: 600 }}>Boutique: {normalizedProduct.seller_name}</p>
+              <p style={{ margin: 0, color: "#6b7280", fontSize: "0.78rem" }}>ID boutique: {boutiqueIdLabel}</p>
+            </div>
+          </div>
         )}
       </div>
 

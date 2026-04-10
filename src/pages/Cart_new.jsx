@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import { getBoutiqueLogo } from "../utils/boutiqueBranding";
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ export default function Cart() {
             const itemPrice = parseFloat(item?.price) || 0;
             const itemQuantity = Math.max(1, parseInt(item?.quantity) || 1);
             const itemSubtotal = Math.round(itemPrice * itemQuantity);
+            const sellerLogo = getBoutiqueLogo({ name: item?.seller_name, raw: { nomboutique: item?.seller_name } });
             
             if (!itemId) return null;
             
@@ -67,7 +69,16 @@ export default function Cart() {
                 />
                 <div className="cart-item-details">
                   <h3 className="cart-item-title">{item?.name || "Sans nom"}</h3>
-                  <p className="cart-item-seller">Vendu par : {item?.seller_name || "SafinPay"}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <img
+                      src={sellerLogo}
+                      alt={item?.seller_name || "Boutique"}
+                      style={{ width: "24px", height: "24px", borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)" }}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <p className="cart-item-seller" style={{ margin: 0 }}>Vendu par : {item?.seller_name || "SafinPay"}</p>
+                  </div>
                   <div style={{ color: "#00a699", fontWeight: "600", marginTop: "0.5rem" }}>
                     Livraison gratuite
                   </div>

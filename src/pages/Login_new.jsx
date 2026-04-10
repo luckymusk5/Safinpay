@@ -56,7 +56,7 @@ export default function Login() {
       }}>
         <div style={{ marginBottom: "1.5rem" }}>
           <p style={{ margin: 0, color: "#c9a030", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", fontSize: "0.75rem" }}>SafinPay</p>
-          <h1 style={{ fontSize: "2rem", margin: "0.35rem 0 0", color: "#1b3a6b" }}>Connexion sécurisée</h1>
+          <h1 style={{ fontSize: "2rem", margin: "0.35rem 0 0", color: "#1b3a6b" }}>SafinPay</h1>
           <p style={{ margin: "0.5rem 0 0", color: "#667085" }}>Choisis ton rôle, puis connecte-toi avec tes identifiants Neon.</p>
         </div>
 

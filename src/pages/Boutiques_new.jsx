@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
+import AsyncProductImage from "../components/AsyncProductImage";
+import { getBoutiqueLogo } from "../utils/boutiqueBranding";
 
 const BLUE = "#1b3a6b";
 const GOLD = "#c9a030";
 const BG = "#f5f7fb";
+const PROMO_IMAGES = [
+  "https://tse1.mm.bing.net/th/id/OIP.N40sCCyNUETLuvBUWqq5RQHaFP?rs=1&pid=ImgDetMain&o=7&rm=3",
+  "https://tse2.mm.bing.net/th/id/OIP.5vo0o-skIO6wJqzs1R7IdgHaFk?rs=1&pid=ImgDetMain&o=7&rm=3",
+];
 
 function normalizeBoutique(boutique) {
   return {
@@ -14,6 +20,7 @@ function normalizeBoutique(boutique) {
     address: boutique?.adresseboutique || boutique?.address || "Adresse non renseignée",
     vendorId: boutique?.idvendeur || boutique?.vendor_id || "",
     verified: Boolean(boutique?.mentionverifierboutique ?? boutique?.verified),
+    logo: boutique?.logo || boutique?.image || boutique?.logoUrl || null,
     raw: boutique,
   };
 }
@@ -73,6 +80,31 @@ export default function Boutiques_new() {
           </p>
         </div>
 
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: "1rem",
+          marginBottom: "1.5rem"
+        }}>
+          {PROMO_IMAGES.map((src, index) => (
+            <div key={src} style={{
+              background: "white",
+              borderRadius: "18px",
+              overflow: "hidden",
+              boxShadow: "0 10px 28px rgba(17,24,39,0.06)",
+              border: "1px solid #e8edf3"
+            }}>
+              <AsyncProductImage
+                src={src}
+                alt={`Publicité boutique ${index + 1}`}
+                loading="lazy"
+                style={{ width: "100%", height: "180px", objectFit: "cover" }}
+                wrapperStyle={{ width: "100%", height: "180px" }}
+              />
+            </div>
+          ))}
+        </div>
+
         {loading ? (
           <div style={{ padding: "3rem 1rem", textAlign: "center", color: "#666" }}>
             Chargement des boutiques...
@@ -119,19 +151,24 @@ export default function Boutiques_new() {
                     padding: "1rem"
                   }}>
                     <div style={{
-                      width: "58px",
-                      height: "58px",
-                      borderRadius: "18px",
+                      width: "76px",
+                      height: "76px",
+                      borderRadius: "22px",
                       background: "rgba(255,255,255,0.16)",
                       border: "1px solid rgba(255,255,255,0.2)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "1.5rem",
-                      fontWeight: 800,
-                      color: "white"
+                      overflow: "hidden"
                     }}>
-                      {boutique.name.slice(0, 1).toUpperCase()}
+                      <AsyncProductImage
+                        src={boutique.logo || getBoutiqueLogo(boutique)}
+                        alt={boutique.name}
+                        priority={false}
+                        loading="lazy"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        wrapperStyle={{ width: "100%", height: "100%" }}
+                      />
                     </div>
                     {boutique.verified && (
                       <span style={{
@@ -154,6 +191,9 @@ export default function Boutiques_new() {
                     <h2 style={{ margin: "0 0 0.4rem", color: BLUE, fontSize: "1.15rem" }}>
                       {boutique.name}
                     </h2>
+                    <p style={{ margin: "0 0 0.35rem", color: "#6b7280", fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                      ID boutique: {boutique.id}
+                    </p>
                     <p style={{ margin: 0, color: "#5f6b7a", lineHeight: 1.6, fontSize: "0.94rem" }}>
                       {boutique.description}
                     </p>

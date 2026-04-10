@@ -3,6 +3,8 @@ import { useEffect, useState, useContext } from "react";
 import api from "../services/api";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
+import AsyncProductImage from "../components/AsyncProductImage";
+import { getBoutiqueLogo } from "../utils/boutiqueBranding";
 
 const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_ORIGIN || "https://safinpaybackend-production.up.railway.app";
 
@@ -102,6 +104,7 @@ export default function ProductDetail() {
   const originalPrice = discount > 0 ? Math.round(priceNumber / (1 - discount / 100)) : priceNumber;
   const avgRating = product.average_rating || 4.5;
   const reviewCount = reviews.length || 0;
+  const boutiqueLogo = getBoutiqueLogo({ name: product.seller_shop_name || product.seller_name || product.name, raw: product.raw || product });
 
   return (
     <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh", padding: "2rem 0" }}>
@@ -130,14 +133,13 @@ export default function ProductDetail() {
               marginBottom: "1rem",
               border: "1px solid #e7e7e7"
             }}>
-              <img
+              <AsyncProductImage
                 src={imageUrl}
                 alt={product.name}
+                priority
+                loading="eager"
                 style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-                onError={(e) => {
-                  console.error("Erreur chargement image:", imageUrl);
-                  e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Crect fill='%23eee' width='500' height='500'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='20'%3EImage non disponible%3C/text%3E%3C/svg%3E";
-                }}
+                wrapperStyle={{ width: "100%", height: "100%" }}
               />
             </div>
           </div>
@@ -247,7 +249,16 @@ export default function ProductDetail() {
 
             {/* Seller Info */}
             <div style={{ backgroundColor: "#f5f5f5", padding: "1rem", borderRadius: "8px", borderLeft: "3px solid #d9534f" }}>
-              <p style={{ margin: 0, marginBottom: "0.5rem", fontWeight: "600" }}>Vendu par :</p>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "0.5rem" }}>
+                <img
+                  src={boutiqueLogo}
+                  alt={product.seller_shop_name || "Boutique"}
+                  style={{ width: "30px", height: "30px", borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)" }}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <p style={{ margin: 0, fontWeight: "600" }}>Vendu par :</p>
+              </div>
               <p style={{ margin: 0, fontSize: "1rem", color: "#0f1111" }}>{product.seller_shop_name || "SafinPay"}</p>
               <p style={{ margin: "0.5rem 0 0 0", fontSize: "0.9rem", color: "#0066c0" }}>✓ Vendeur de confiance</p>
             </div>

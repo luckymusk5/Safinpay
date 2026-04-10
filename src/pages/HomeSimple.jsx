@@ -2,6 +2,7 @@ import { useEffect, useState, useContext, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { SearchContext } from "../context/SearchContext";
 import api from "../services/api";
+import AsyncProductImage from "../components/AsyncProductImage";
 
 function useWindowWidth() {
   const [w, setW] = useState(window.innerWidth);
@@ -113,9 +114,12 @@ function ProductCard({ product, idx = 0 }) {
       <div style={{ width: "100%", height: "175px", background: "#f0f3f9",
         display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
         {imageUrl ? (
-          <img src={imageUrl} alt={title}
+          <AsyncProductImage
+            src={imageUrl}
+            alt={title}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            onError={e => { e.target.style.display = "none"; }} />
+            wrapperStyle={{ width: "100%", height: "100%" }}
+          />
         ) : (
           <span style={{ color: "#aab", fontSize: "0.75rem", padding: "0.5rem", textAlign: "center" }}>
             {title.slice(0, 40)}
