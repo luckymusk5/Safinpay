@@ -9,29 +9,80 @@ export default function Login() {
   const [role, setRole] = useState("client");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
+      console.log("🔐 Tentative de connexion avec:", { identifier, role });
+
       const res = await api.post("/auth/login/", {
         identifier,
         password,
         role,
       });
 
-      if (res.data?.access) {
-        localStorage.setItem("access_token", res.data.access);
-        localStorage.setItem("refresh_token", res.data.refresh || "");
-        login(res.data.user || null);
-        navigate(res.data.user?.role === "seller" ? "/seller/dashboard" : "/");
+      // ✅ Parser la réponse standardisée {success, message, data}
+      const responseData = res.data;
+      console.log("✅ Réponse de connexion:", responseData);
+
+      if (responseData?.success === true && responseData?.data) {
+        // ✅ SUCCÈS: tokens et user reçus
+        const { data } = responseData;
+        
+        // Sauvegarder les tokens
+        localStorage.setItem("access_token", data.access);
+        localStorage.setItem("refresh_token", data.refresh || "");
+        
+        // Mettre à jour le contexte d'authentification
+        if (data.user) {
+          login(data.user);
+        }
+        
+        // Afficher un message de succès
+        setSuccess(`✅ ${responseData.message || 'Connexion réussie!'}`);
+        
+        // Rediriger après 1 seconde
+        setTimeout(() => {
+          const redirectPath = data.user?.role === "seller" ? "/seller/dashboard" : "/";
+          navigate(redirectPath);
+        }, 1000);
+      } else {
+        // ❌ La réponse n'a pas success=true
+        const errorMsg = responseData?.message || "Erreur lors de la connexion";
+        setError(`❌ ${errorMsg}`);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Email, téléphone ou mot de passe incorrect");
+      // ✅ Gestion des erreurs HTTP
+      console.error("❌ Erreur de connexion:", err);
+
+      let errorMessage = "❌ Erreur lors de la connexion";
+
+      if (err.response?.data?.message) {
+        // ✅ Le serveur a retourné {success: false, message: "..."}
+        errorMessage = `❌ ${err.response.data.message}`;
+      } else if (err.response?.data?.detail) {
+        // Fallback ancien format (pour compatibilité)
+        errorMessage = `❌ ${err.response.data.detail}`;
+      } else if (err.response?.status === 401) {
+        errorMessage = "❌ Email/téléphone ou mot de passe incorrect";
+      } else if (err.response?.status === 400) {
+        errorMessage = "❌ Veuillez entrer vos identifiants";
+      } else if (err.response?.status === 500) {
+        errorMessage = "❌ Erreur serveur. Veuillez réessayer plus tard";
+      } else if (err.code === "ECONNABORTED") {
+        errorMessage = "❌ Connexion expirée. Veuillez réessayer";
+      } else if (!err.response) {
+        errorMessage = "❌ Erreur de connexion au serveur";
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -60,6 +111,7 @@ export default function Login() {
           <p style={{ margin: "0.5rem 0 0", color: "#667085" }}>Choisis ton rôle, puis connecte-toi avec tes identifiants Neon.</p>
         </div>
 
+        {/* ✅ Afficher les messages d'erreur */}
         {error && (
           <div style={{
             backgroundColor: "#fff1f2",
@@ -68,9 +120,26 @@ export default function Login() {
             borderRadius: "12px",
             marginBottom: "1rem",
             fontSize: "0.92rem",
-            border: "1px solid rgba(180,35,24,0.15)"
+            border: "1px solid rgba(180,35,24,0.15)",
+            animation: "slideDown 0.3s ease-out"
           }}>
             {error}
+          </div>
+        )}
+
+        {/* ✅ Afficher les messages de succès */}
+        {success && (
+          <div style={{
+            backgroundColor: "#e6f9f0",
+            color: "#0a5e4d",
+            padding: "0.9rem 1rem",
+            borderRadius: "12px",
+            marginBottom: "1rem",
+            fontSize: "0.92rem",
+            border: "1px solid rgba(10,94,77,0.2)",
+            animation: "slideDown 0.3s ease-out"
+          }}>
+            {success}
           </div>
         )}
 
@@ -85,8 +154,8 @@ export default function Login() {
               className="form-select"
               style={{ width: "100%" }}
             >
-              <option value="client">Client</option>
-              <option value="seller">Vendeur</option>
+              <option value="client">👤 Client</option>
+              <option value="seller">🛍️ Vendeur</option>
             </select>
           </div>
 
@@ -132,10 +201,12 @@ export default function Login() {
               borderRadius: "12px",
               opacity: loading ? 0.7 : 1,
               cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: 700
+              fontWeight: 700,
+              background: loading ? "#ccc" : undefined,
+              transition: "all 0.2s ease"
             }}
           >
-            {loading ? "Connexion en cours..." : "Se connecter"}
+            {loading ? "⏳ Connexion en cours..." : "✅ Se connecter"}
           </button>
         </form>
 
@@ -151,7 +222,7 @@ export default function Login() {
             background: "#f8fafc",
             border: "1px solid #e5e7eb"
           }}>
-            <p style={{ margin: 0, fontWeight: 700, color: "#1b3a6b" }}>Client</p>
+            <p style={{ margin: 0, fontWeight: 700, color: "#1b3a6b" }}>👤 Client</p>
             <p style={{ margin: "0.35rem 0 0", color: "#667085", fontSize: "0.88rem" }}>Achats, panier, commandes.</p>
           </div>
           <div style={{
@@ -160,7 +231,7 @@ export default function Login() {
             background: "#fffaf1",
             border: "1px solid rgba(201,160,48,0.25)"
           }}>
-            <p style={{ margin: 0, fontWeight: 700, color: "#7a5e00" }}>Vendeur</p>
+            <p style={{ margin: 0, fontWeight: 700, color: "#7a5e00" }}>🛍️ Vendeur</p>
             <p style={{ margin: "0.35rem 0 0", color: "#8a6a00", fontSize: "0.88rem" }}>Dashboard, produits, boutique.</p>
           </div>
         </div>
@@ -178,6 +249,19 @@ export default function Login() {
           </p>
         </div>
       </div>
+
+      <style>{`
+        @keyframes slideDown {
+          from { 
+            opacity: 0; 
+            transform: translateY(-10px); 
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0); 
+          }
+        }
+      `}</style>
     </div>
   );
 }
