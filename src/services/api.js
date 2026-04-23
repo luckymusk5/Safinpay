@@ -6,12 +6,13 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "https://safinpaybackend-pr
 // Création d'une instance Axios
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10s timeout
+  timeout: 30000, // 30s timeout (images lazy loading peut être long)
 });
 
 const authFreePaths = ["/auth/login/", "/auth/register/", "/auth/refresh/"];
 const refreshClient = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000, // 30s timeout
 });
 
 // ✅ Intercepteur de cache pour les requêtes GET
@@ -42,7 +43,7 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => {
     // ✅ Cacher les réponses GET (sauf auth)
-    if (response.config.method === 'get' && !authFreePaths.some(p => response.config.url?.includes(p))) {
+    if (response.config && response.config.method === 'get' && !authFreePaths.some(p => response.config.url?.includes(p))) {
       const cacheKey = cacheService.getCacheKey(response.config.url, response.config.params);
       const ttl = response.config.url?.includes('/products') ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 1h pour produits, 24h autres
       cacheService.setMemory(cacheKey, response.data, ttl);
