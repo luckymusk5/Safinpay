@@ -116,6 +116,7 @@ function ProductCard({ product, idx = 0 }) {
         {imageUrl ? (
           <AsyncProductImage
             src={imageUrl}
+            productId={product.id}
             alt={title}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
             wrapperStyle={{ width: "100%", height: "100%" }}
@@ -201,7 +202,17 @@ export default function HomeSimple() {
   // Chargement unique dans rawRef (pas de state = pas de re-render par item)
   useEffect(() => {
     api.get("/products/")
-      .then(res => res.data)
+      .then(res => {
+        // ✅ Gérer la nouvelle structure avec pagination
+        if (Array.isArray(res.data)) {
+          return res.data; // Ancien format (array)
+        } else if (res.data?.data) {
+          return res.data.data; // Nouveau format avec pagination
+        } else if (res.data?.results) {
+          return res.data.results; // Format alternatif
+        }
+        return [];
+      })
       .then(data => {
         const normalized = (Array.isArray(data) ? data : []).map((p, i) => {
           const detectedCategory = p.category || p.category_name || detectCategory(p.title, p.description);

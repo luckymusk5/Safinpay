@@ -33,6 +33,7 @@ export default function ProductCardSimple({ product }) {
         {imageUrl ? (
           <AsyncProductImage
             src={imageUrl}
+            productId={product.id}
             alt={title}
             style={{
               width: "100%",
@@ -42,7 +43,7 @@ export default function ProductCardSimple({ product }) {
             wrapperStyle={{ width: "100%", height: "100%" }}
           />
         ) : (
-          <span style={{ color: "#999", fontSize: "12px" }}>No Image</span>
+          <span style={{ color: "#999", fontSize: "12px" }}>Pas d'image</span>
         )}
       </div>
 

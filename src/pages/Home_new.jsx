@@ -7,10 +7,28 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ category: "", priceRange: "" });
   const [categories, setCategories] = useState([]);
+  const [debugInfo, setDebugInfo] = useState("");
 
   useEffect(() => {
+    // Log des variables d'environnement
+    const apiUrl = import.meta.env.VITE_API_URL || "https://safinpaybackend-production.up.railway.app/api/";
+    console.log("🔍 Debug Info:");
+    console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+    console.log("Final API URL:", apiUrl);
+    setDebugInfo(`API: ${apiUrl}`);
+
     api.get("/products/")
-      .then(res => res.data)
+      .then(res => {
+        // ✅ Gérer la nouvelle structure avec pagination
+        if (Array.isArray(res.data)) {
+          return res.data; // Ancien format (array)
+        } else if (res.data?.data) {
+          return res.data.data; // Nouveau format avec pagination
+        } else if (res.data?.results) {
+          return res.data.results; // Format alternatif
+        }
+        return [];
+      })
       .then(data => {
         let productsList = Array.isArray(data) ? data : [];
         // Ajouter un ID unique basé sur l'index si absent
@@ -21,10 +39,11 @@ export default function Home() {
         }));
         setProducts(productsList);
         setCategories([...new Set(productsList.map(item => item.category).filter(Boolean))]);
-        console.log(`Chargé ${productsList.length} produits`);
+        console.log(`✅ Chargé ${productsList.length} produits`);
+        console.log("Premier produit:", productsList[0]);
       })
       .catch(err => {
-        console.error("Erreur lors du chargement des produits:", err);
+        console.error("❌ Erreur lors du chargement des produits:", err);
       })
       .finally(() => {
         setLoading(false);
@@ -45,6 +64,19 @@ export default function Home() {
 
   return (
     <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh", paddingTop: "1.5rem" }}>
+      {/* Debug Info */}
+      <div style={{
+        backgroundColor: "#fffacd",
+        color: "#333",
+        padding: "1rem",
+        marginBottom: "1rem",
+        textAlign: "center",
+        fontSize: "12px",
+        borderBottom: "2px solid #FFD700"
+      }}>
+        🔧 {debugInfo}
+      </div>
+
       {/* Banner */}
       <div style={{
         background: "linear-gradient(135deg, #1f5296 0%, #0f3f7f 100%)",

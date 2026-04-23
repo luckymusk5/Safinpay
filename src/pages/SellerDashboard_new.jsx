@@ -30,7 +30,15 @@ export default function SellerDashboard_new() {
       // Charger les produits
       api.get("/products/", { params: { seller: user.seller_id } })
         .then(res => {
-          const productsList = Array.isArray(res.data) ? res.data : res.data.results || [];
+          // ✅ Gérer la nouvelle structure avec pagination
+          let productsList = [];
+          if (Array.isArray(res.data)) {
+            productsList = res.data; // Ancien format (array)
+          } else if (res.data?.data) {
+            productsList = res.data.data; // Nouveau format avec pagination
+          } else if (res.data?.results) {
+            productsList = res.data.results; // Format alternatif
+          }
           setProducts(productsList);
         })
         .catch(err => console.error(err))

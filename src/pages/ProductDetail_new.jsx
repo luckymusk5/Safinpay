@@ -135,6 +135,7 @@ export default function ProductDetail() {
             }}>
               <AsyncProductImage
                 src={imageUrl}
+                productId={product.id}
                 alt={product.name}
                 priority
                 loading="eager"

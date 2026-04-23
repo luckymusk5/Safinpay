@@ -1,13 +1,31 @@
 import { Link } from "react-router-dom";
+import AsyncProductImage from "./AsyncProductImage";
+
+const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_ORIGIN || "https://safinpaybackend-production.up.railway.app";
 
 export default function ProductCard({ product }) {
+  let imageUrl = product.image;
+  
+  // Gérer les images du backend - ajouter la base URL si ce n'est pas une URL complète
+  if (!imageUrl && product.images && Array.isArray(product.images) && product.images.length > 0) {
+    imageUrl = product.images[0];
+  }
+  
+  if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+    imageUrl = `${BACKEND_ORIGIN}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
+  }
+
   return (
     <div className="product-card">
       {/* Image du produit */}
-      <img
-        src={product.image || "/placeholder.png"}
-        alt={product.name}
+      <AsyncProductImage
+        src={imageUrl}
+        productId={product.id}
+        alt={product.name || "Produit"}
+        baseUrl={BACKEND_ORIGIN}
         className="product-image"
+        style={{ objectFit: "cover" }}
+        wrapperStyle={{ width: "100%", height: "200px" }}
       />
 
       {/* Contenu */}

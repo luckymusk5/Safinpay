@@ -57,7 +57,16 @@ export default function Categories() {
     const loadProducts = async () => {
       try {
         const res = await api.get("/products/");
-        const data = Array.isArray(res.data) ? res.data : res.data.results || [];
+        // ✅ Gérer la nouvelle structure avec pagination
+        let data = [];
+        if (Array.isArray(res.data)) {
+          data = res.data; // Ancien format (array)
+        } else if (res.data?.data) {
+          data = res.data.data; // Nouveau format avec pagination
+        } else if (res.data?.results) {
+          data = res.data.results; // Format alternatif
+        }
+        
         const normalized = data.map(normalizeProduct);
         if (active) {
           setProducts(normalized);

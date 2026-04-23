@@ -106,6 +106,7 @@ export default function ProductCard({ product }) {
         <div className="product-image-container" style={{ cursor: "pointer" }}>
           <AsyncProductImage
             src={finalImageUrl}
+            productId={normalizedProduct.id}
             alt={normalizedProduct.name}
             className="product-image"
             style={{ objectFit: "cover" }}
