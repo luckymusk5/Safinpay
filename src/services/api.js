@@ -1,7 +1,29 @@
 import axios from "axios";
 import { cacheService } from "./cacheService";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://safinpaybackend-production.up.railway.app/api/";
+// ✅ API_BASE_URL adapté à l'environnement
+// - Dev local: "http://localhost:5173/api/" → proxy vers localhost:8000 (vite.config.js)
+// - Prod Vercel: "https://safinpay.vercel.app/api/" → proxy vers Railway (vercel.json)
+// - Fallback: "https://safinpaybackend-production.up.railway.app/api/"
+const getApiBaseUrl = () => {
+  const env = import.meta.env.VITE_API_URL;
+  if (env) return env;
+  
+  // En dev local: utiliser le proxy local
+  if (import.meta.env.DEV) {
+    return "/api/";
+  }
+  
+  // En prod: utiliser le proxy Vercel (qui redirige vers Railway)
+  if (typeof window !== 'undefined' && window.location.origin.includes('vercel.app')) {
+    return "/api/";
+  }
+  
+  // Fallback: Railway direct (pour tests manuels)
+  return "https://safinpaybackend-production.up.railway.app/api/";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Création d'une instance Axios
 const api = axios.create({

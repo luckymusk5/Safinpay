@@ -1,5 +1,27 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "devCommand": "npm run dev",
+  "env": {
+    "VITE_API_URL": "@vite_api_url",
+    "VITE_BACKEND_ORIGIN": "@vite_backend_origin"
+  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "https://safinpaybackend-production.up.railway.app/api/$1"
+    },
+    {
+      "source": "/proxy-image(.*)",
+      "destination": "https://safinpaybackend-production.up.railway.app/proxy-image$1"
+    },
+    {
+      "source": "/proxy-data(.*)",
+      "destination": "https://safinpaybackend-production.up.railway.app/proxy-data$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

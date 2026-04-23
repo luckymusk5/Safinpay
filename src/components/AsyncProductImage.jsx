@@ -1,7 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 
-const BACKEND_ORIGIN =
-  import.meta.env.VITE_BACKEND_ORIGIN || "https://safinpaybackend-production.up.railway.app";
+// ✅ Backend origin adapté à l'environnement
+const getBackendOrigin = () => {
+  const env = import.meta.env.VITE_BACKEND_ORIGIN;
+  if (env) return env;
+  
+  // En dev local: vite proxy
+  if (import.meta.env.DEV) {
+    return typeof window !== 'undefined' ? window.location.origin : "http://localhost:5173";
+  }
+  
+  // En prod Vercel: utiliser Vercel proxy
+  if (typeof window !== 'undefined' && window.location.origin.includes('vercel.app')) {
+    return window.location.origin;
+  }
+  
+  // Fallback: Railway direct
+  return "https://safinpaybackend-production.up.railway.app";
+};
+
+const BACKEND_ORIGIN = getBackendOrigin();
 
 const PLACEHOLDER_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect fill='%23e8e8e8' width='800' height='600'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' font-size='48' fill='%23999'%3E📷%3C/text%3E%3C/svg%3E";

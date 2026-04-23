@@ -10,21 +10,18 @@ export default defineConfig({
     }),
   ],
   build: {
-    // ✅ Optimisations de build
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    // ✅ Optimisations de build avec esbuild
+    minify: 'esbuild',
     rollupOptions: {
       output: {
-        // Split du code pour paralléliser le chargement
-        manualChunks: {
-          'react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor': ['axios'],
-          'tailwind': [],
+        // Split du code pour paralléliser le chargement (fonction pour Rolldown)
+        manualChunks: (id) => {
+          if (id.includes('node_modules/react')) {
+            return 'react';
+          }
+          if (id.includes('node_modules/axios')) {
+            return 'vendor';
+          }
         },
       },
     },
@@ -37,7 +34,24 @@ export default defineConfig({
   // ✅ Optimisations du serveur de dev
   server: {
     strictPort: false,
-    // Compression gzip en dev
     middlewareMode: false,
+    // Proxy vers le backend local en développement
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path,
+      },
+      '/proxy-image': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path,
+      },
+      '/proxy-data': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path,
+      },
+    },
   },
 })
