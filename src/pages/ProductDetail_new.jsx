@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
 import api from "../services/api";
 import { CartContext } from "../context/CartContext";
@@ -35,7 +35,7 @@ export default function ProductDetail() {
         try {
           const reviewRes = await api.get(`/reviews/?product_id=${id}`);
           setReviews(reviewRes.data || []);
-        } catch (err) {
+        } catch {
           console.log("Pas d'avis trouvés");
         }
 
@@ -91,7 +91,7 @@ export default function ProductDetail() {
   if (!product) return <div style={{ padding: "2rem", textAlign: "center" }}>Produit non trouvé</div>;
 
   // Construire l'URL complète de l'image
-  let imageUrl = product.image;
+  let imageUrl = product.image || product.images?.[0];
   if (imageUrl && !imageUrl.startsWith('http')) {
     imageUrl = `${BACKEND_ORIGIN}${imageUrl}`;
   }
@@ -340,10 +340,11 @@ export default function ProductDetail() {
                 >
                   <div style={{ border: "1px solid #e7e7e7", borderRadius: "8px", overflow: "hidden", backgroundColor: "#fff" }}>
                     <div style={{ height: "140px", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <img
-                        src={related.image || product.image}
+                      <AsyncProductImage
+                        src={related.image || related.images?.[0] || product.image || product.images?.[0]}
                         alt={related.name}
                         style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "cover" }}
+                        wrapperStyle={{ width: "100%", height: "100%" }}
                       />
                     </div>
                     <div style={{ padding: "0.85rem" }}>
